@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Oracle Fusion ERP Financials 26D | ARトランザクション〜入金・消込〜SLA〜GL転記 データフローアニメーション</title>
+  <link rel="stylesheet" href="styles.css" />
+  <style>
+    .portal-subnav { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 7px 24px; background: #020617; color: #e2e8f0; border-bottom: 1px solid #334155; font-size: 12px; flex-wrap: wrap; }
+    .psnav-pager { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .psnav-btn { display: inline-flex; align-items: center; gap: 5px; padding: 4px 11px; border-radius: 6px; background: #1e293b; color: #f8fafc; text-decoration: none; font-weight: 700; border: 1px solid #475569; transition: background 0.15s; }
+    .psnav-btn:hover { background: #2563eb; border-color: #3b82f6; }
+    .psnav-home { background: #334155; }
+    .psnav-pos { color: #94a3b8; font-weight: 700; padding: 0 4px; }
+    .psnav-disabled { display: inline-flex; align-items: center; padding: 4px 11px; border-radius: 6px; background: #0f172a; color: #475569; border: 1px solid #1e293b; font-weight: 700; cursor: not-allowed; }
+  </style>
+</head>
+<body>
+  <nav class="portal-subnav" aria-label="ページ遷移ナビゲーション">
+    <a href="../index.html" class="psnav-btn psnav-home">🏠 メインページへ戻る</a>
+    <div class="psnav-pager">
+      <a href="../AP_PREPAY/index.html" class="psnav-btn">◀ 前のページ：AP 買掛管理（前払金）</a>
+      <span class="psnav-pos">3 / 5：AR 売掛管理</span>
+      <a href="../SLA/index.html" class="psnav-btn">次のページ：SLA・FAH 統合フロー ▶</a>
+    </div>
+  </nav>
+  <header class="app-header">
+    <div class="header-left">
+      <div class="brand-badge">Oracle Fusion ERP Financials 26D (OEDMF準拠)</div>
+      <h1>AR請求計上 → 入金 → 消込 → SLA会計作成 → GL転記 データフロー＆テーブル遷移可視化</h1>
+      <p class="header-sub">
+        全42テーブル・AFF 9セグメント体系（会社-部門-勘定科目-補助科目-税コード-管理コード-備考1-備考2-備考3）完全網羅 ｜
+        請求書 <code>INV-2026-0001</code>：明細1(100,000円+税10% 10,000円) ＋ 明細2(50,000円+軽減税8% 4,000円) ＝ <strong>164,000円</strong>
+      </p>
+    </div>
+    <div class="header-actions">
+      <button id="btn-aff-modal" class="btn btn-secondary" title="AFF 9セグメント定義とCCID一覧を表示">
+        🧾 AFF 9セグメント体系
+      </button>
+      <button id="btn-er-modal" class="btn btn-secondary" title="全テーブル間の結合条件(PK/FK)一覧を表示">
+        🔗 ER結合関係一覧
+      </button>
+      <a href="FusionERP_26D_AR_to_GL_DataFlow.xlsx" download class="btn btn-excel" title="全42テーブル・全項目をまとめたExcelファイルをダウンロード">
+        📊 Excelダウンロード (.xlsx)
+      </a>
+      <a href="https://docs.oracle.com/en/cloud/saas/financials/26d/oedmf/index.html" target="_blank" rel="noopener noreferrer" class="btn btn-outline">
+        📖 26D OEDMF公式 ↗
+      </a>
+    </div>
+  </header>
+
+  <!-- タイムライン＆アニメーション操作バー -->
+  <section class="timeline-bar">
+    <div class="playback-controls">
+      <button id="btn-first" class="ctrl-btn" title="ステップ0へ">⏮</button>
+      <button id="btn-prev" class="ctrl-btn" title="前のステップ">◀ 前へ</button>
+      <button id="btn-play" class="ctrl-btn ctrl-play" title="自動再生 / 一時停止">▶ 自動再生</button>
+      <button id="btn-next" class="ctrl-btn" title="次のステップ">次へ ▶</button>
+      <button id="btn-last" class="ctrl-btn" title="最終ステップへ">⏭</button>
+      <label class="speed-select-wrap">
+        <span>再生速度:</span>
+        <select id="speed-select">
+          <option value="4500">ゆっくり (4.5秒)</option>
+          <option value="2800" selected>標準 (2.8秒)</option>
+          <option value="1500">速い (1.5秒)</option>
+        </select>
+      </label>
+    </div>
+    <div id="step-pills" class="step-pills"></div>
+  </section>
+
+  <!-- カラー凡例バー -->
+  <section class="legend-bar">
+    <div class="legend-items">
+      <span class="legend-chip"><span class="dot dot-insert"></span> 新規登録 (INSERT)</span>
+      <span class="legend-chip"><span class="dot dot-update"></span> 更新・フラグ変化 (UPDATE: 旧→新)</span>
+      <span class="legend-chip"><span class="dot dot-ref"></span> マスタ/他表参照 (READ)</span>
+      <span class="legend-chip"><span class="dot dot-existing"></span> 作成済データ</span>
+      <span class="legend-chip"><span class="dot dot-not"></span> 未作成</span>
+    </div>
+    <div class="legend-badges">
+      <span class="col-badge badge-pk">PK</span> 主キー
+      <span class="col-badge badge-fk">FK</span> 外部キー
+      <span class="col-badge badge-flag">FLAG</span> 重要フラグ/ステータス
+      <span class="col-badge badge-amt">AMT</span> 金額/数量
+    </div>
+  </section>
+
+  <!-- メイン上段：SVGアニメーション ＋ プロセス詳細解説 -->
+  <main class="main-stage">
+    <section class="diagram-panel">
+      <div class="panel-header">
+        <div>
+          <h2>リアルタイム・テーブル連携アニメーション図（全42テーブル）</h2>
+          <p class="panel-note">※ 各テーブルノードをクリックすると、下段のデータインスペクタでそのテーブルの全カラムと値を即座に確認できます。</p>
+        </div>
+        <div class="zoom-controls">
+          <button id="btn-fit-svg" class="btn-mini">全体表示</button>
+          <span id="svg-step-indicator" class="step-tag">STEP 0</span>
+        </div>
+      </div>
+      <div class="svg-wrapper" id="svg-wrapper">
+        <svg id="flow-svg" viewBox="0 0 1460 880" xmlns="http://www.w3.org/2000/svg"></svg>
+      </div>
+    </section>
+
+    <aside class="info-panel">
+      <div class="step-header-card">
+        <div class="step-meta-row">
+          <span id="info-step-code" class="info-step-badge">STEP 0</span>
+          <span id="info-step-date" class="info-date-badge">2026-11-01</span>
+        </div>
+        <h2 id="info-step-title">タイトル</h2>
+        <p id="info-step-subtitle" class="info-subtitle"></p>
+      </div>
+
+      <div class="info-scroll">
+        <div class="info-block">
+          <h3>📝 プロセス解説（業務内容とFusion内部処理）</h3>
+          <div id="info-description" class="desc-paragraphs"></div>
+        </div>
+
+        <div class="info-block">
+          <h3>🚩 このステップで更新・設定されるフラグ／データ変化</h3>
+          <div id="info-flag-changes" class="flag-changes-list"></div>
+        </div>
+
+        <div class="info-block">
+          <h3>📒 会計仕訳・残高インパクト（AFF 9セグメント連動）</h3>
+          <div id="info-journal-preview" class="journal-preview"></div>
+        </div>
+      </div>
+    </aside>
+  </main>
+
+  <!-- 下段：全42テーブル・全項目データインスペクタ -->
+  <section class="inspector-section" id="inspector-section">
+    <div class="inspector-toolbar">
+      <div class="toolbar-left">
+        <h2>🗄️ 全42テーブル データ・フラグ・項目別 状態インスペクタ</h2>
+        <div class="view-tabs">
+          <button class="tab-btn active" data-view="changed">⚡ このステップで更新・追加されたテーブル</button>
+          <button class="tab-btn" data-view="all">📚 全42テーブル網羅表示</button>
+        </div>
+      </div>
+      <div class="toolbar-right">
+        <select id="domain-filter" class="filter-select" title="ドメインで絞り込み">
+          <option value="ALL">全ドメイン (42テーブル)</option>
+          <option value="ORG_GL_MASTER">A. 組織・元帳・期間・AFF (6)</option>
+          <option value="TCA_MASTER">B. 顧客マスタ TCA (4)</option>
+          <option value="AR_TAX_CE_MASTER">C. AR・税・銀行マスタ (12)</option>
+          <option value="AR_TRX_RECEIPT">D. AR請求・税・入金・消込 (9)</option>
+          <option value="SLA_XLA">E. SLA 補助元帳会計 (5)</option>
+          <option value="GL_LEDGER">F. GL 総勘定元帳 (6)</option>
+        </select>
+        <input type="text" id="table-search" class="search-input" placeholder="テーブル名 / カラム名 / 値で検索..." />
+        <label class="toggle-aff">
+          <input type="checkbox" id="chk-show-aff" checked />
+          <span>CCIDにAFF 9セグメント併記</span>
+        </label>
+      </div>
+    </div>
+
+    <div id="selected-banner" class="selected-banner hidden">
+      <span>🎯 図から選択中のテーブル: <strong id="selected-table-name"></strong></span>
+      <button id="btn-clear-selection" class="btn-mini">選択解除して一覧に戻る</button>
+    </div>
+
+    <div id="tables-container" class="tables-container"></div>
+  </section>
+
+  <!-- AFF 9セグメントモーダル -->
+  <div id="aff-modal" class="modal hidden">
+    <div class="modal-backdrop" data-close="aff-modal"></div>
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>🧾 会計フレックスフィールド (AFF) 9セグメント体系 ＆ CCID定義一覧</h3>
+        <button class="modal-close" data-close="aff-modal">✕</button>
+      </div>
+      <div class="modal-body" id="aff-modal-body"></div>
+    </div>
+  </div>
+
+  <!-- ER結合関係一覧モーダル -->
+  <div id="er-modal" class="modal hidden">
+    <div class="modal-backdrop" data-close="er-modal"></div>
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>🔗 Oracle Fusion Financials 26D テーブル間リレーション (PK/FK結合条件一覧)</h3>
+        <button class="modal-close" data-close="er-modal">✕</button>
+      </div>
+      <div class="modal-body" id="er-modal-body"></div>
+    </div>
+  </div>
+
+  <script src="data.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

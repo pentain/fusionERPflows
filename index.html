@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Fusion ERP Finanacialsデータフロー</title>
+  <style>
+    :root {
+      --bg-page: #f1f5f9;
+      --bg-card: #ffffff;
+      --text-main: #0f172a;
+      --text-sub: #475569;
+      --text-muted: #64748b;
+      --border-light: #e2e8f0;
+      --border-mid: #cbd5e1;
+      --oracle-red: #c74634;
+      --primary: #2563eb;
+      --primary-hover: #1d4ed8;
+      --green: #16a34a;
+      --green-hover: #15803d;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Yu Gothic UI", "Meiryo", sans-serif;
+      background: var(--bg-page);
+      color: var(--text-main);
+      line-height: 1.55;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ヘッダー */
+    .portal-header {
+      background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+      color: #f8fafc;
+      padding: 22px 32px;
+      border-bottom: 4px solid var(--oracle-red);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 20px;
+      flex-wrap: wrap;
+    }
+
+    .header-brand {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .oracle-badge {
+      display: inline-block;
+      width: fit-content;
+      background: var(--oracle-red);
+      color: #fff;
+      font-size: 11.5px;
+      font-weight: 800;
+      padding: 4px 10px;
+      border-radius: 6px;
+      letter-spacing: 0.4px;
+    }
+
+    .portal-header h1 {
+      margin: 0;
+      font-size: 24px;
+      font-weight: 800;
+      letter-spacing: 0.2px;
+    }
+
+    .header-sub {
+      margin: 0;
+      font-size: 13px;
+      color: #cbd5e1;
+    }
+
+    .header-links {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .btn-header {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 9px 14px;
+      border-radius: 8px;
+      font-size: 12.5px;
+      font-weight: 700;
+      text-decoration: none;
+      color: #f8fafc;
+      background: rgba(255, 255, 255, 0.12);
+      border: 1px solid rgba(255, 255, 255, 0.22);
+      transition: all 0.15s ease;
+    }
+    .btn-header:hover {
+      background: rgba(255, 255, 255, 0.22);
+    }
+
+    /* メインコンテナ */
+    .container {
+      max-width: 1360px;
+      width: 100%;
+      margin: 0 auto;
+      padding: 24px 28px 40px;
+      flex: 1;
+    }
+
+    /* 共通設計サマリバー */
+    .summary-strip {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 14px;
+      margin-bottom: 24px;
+    }
+
+    .stat-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-light);
+      border-top: 4px solid var(--primary);
+      border-radius: 10px;
+      padding: 14px 16px;
+      box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);
+    }
+    .stat-card.c-green { border-top-color: #16a34a; }
+    .stat-card.c-purple { border-top-color: #7e22ce; }
+    .stat-card.c-amber { border-top-color: #ca8a04; }
+
+    .stat-val {
+      font-size: 20px;
+      font-weight: 900;
+      color: var(--text-main);
+    }
+    .stat-lbl {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--text-sub);
+      margin-top: 2px;
+    }
+    .stat-desc {
+      font-size: 11.5px;
+      color: var(--text-muted);
+      margin-top: 4px;
+    }
+
+    /* フィルタ＆見出しバー */
+    .section-toolbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 18px;
+      flex-wrap: wrap;
+    }
+    .section-toolbar h2 {
+      margin: 0;
+      font-size: 18px;
+      font-weight: 800;
+    }
+    .filter-pills {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .filter-btn {
+      padding: 6px 14px;
+      border-radius: 999px;
+      border: 1px solid var(--border-mid);
+      background: #fff;
+      color: var(--text-sub);
+      font-size: 12.5px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .filter-btn:hover { border-color: #93c5fd; background: #eff6ff; color: #1e40af; }
+    .filter-btn.active {
+      background: var(--primary);
+      border-color: var(--primary);
+      color: #fff;
+    }
+
+    /* カードグリッド */
+    .cards-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+      gap: 20px;
+    }
+
+    .flow-card {
+      background: var(--bg-card);
+      border: 1.5px solid var(--border-light);
+      border-radius: 14px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 4px 16px rgba(15, 23, 42, 0.05);
+      transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+    }
+    .flow-card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 10px 26px rgba(15, 23, 42, 0.1);
+      border-color: #93c5fd;
+    }
+    .flow-card.hidden { display: none; }
+
+    .card-top {
+      padding: 16px 18px 12px;
+      border-bottom: 1px solid var(--border-light);
+      background: linear-gradient(180deg, #f8fafc 0%, #ffffff 100%);
+    }
+
+    .card-badges {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 8px;
+      flex-wrap: wrap;
+    }
+
+    .mod-badge {
+      font-size: 11px;
+      font-weight: 800;
+      padding: 3px 9px;
+      border-radius: 6px;
+      color: #fff;
+    }
+    .bg-ar { background: #1d4ed8; }
+    .bg-ap { background: #0f766e; }
+    .bg-ap-pre { background: #b45309; }
+    .bg-sla { background: #7e22ce; }
+    .bg-fah { background: #be123c; }
+
+    .folder-tag {
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--text-sub);
+      background: #e2e8f0;
+      padding: 2px 8px;
+      border-radius: 5px;
+    }
+
+    .card-top h3 {
+      margin: 0;
+      font-size: 16px;
+      font-weight: 800;
+      color: var(--text-main);
+    }
+
+    .card-body {
+      padding: 14px 18px;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .card-desc {
+      margin: 0;
+      font-size: 13px;
+      color: var(--text-sub);
+    }
+
+    .highlights {
+      margin: 0;
+      padding: 10px 12px;
+      background: #f8fafc;
+      border: 1px solid var(--border-light);
+      border-radius: 8px;
+      list-style: none;
+      font-size: 12px;
+      color: var(--text-main);
+    }
+    .highlights li {
+      margin-bottom: 4px;
+    }
+    .highlights li:last-child {
+      margin-bottom: 0;
+    }
+    .highlights code {
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      background: #e2e8f0;
+      padding: 1px 5px;
+      border-radius: 4px;
+      font-size: 11px;
+    }
+
+    .card-actions {
+      padding: 12px 18px 16px;
+      border-top: 1px solid var(--border-light);
+      background: #f8fafc;
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .btn-open {
+      flex: 1;
+      display: inline-flex;
+      justify-content: center;
+      align-items: center;
+      gap: 6px;
+      padding: 9px 14px;
+      background: var(--primary);
+      color: #fff;
+      text-decoration: none;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 700;
+      transition: background 0.15s;
+    }
+    .btn-open:hover { background: var(--primary-hover); }
+
+    .btn-dl {
+      display: inline-flex;
+      justify-content: center;
+      align-items: center;
+      gap: 6px;
+      padding: 9px 13px;
+      background: var(--green);
+      color: #fff;
+      text-decoration: none;
+      border-radius: 8px;
+      font-size: 12.5px;
+      font-weight: 700;
+      transition: background 0.15s;
+    }
+    .btn-dl:hover { background: var(--green-hover); }
+
+    /* 共通AFF注記 */
+    .aff-footer-box {
+      margin-top: 26px;
+      background: var(--bg-card);
+      border: 1px solid var(--border-light);
+      border-left: 5px solid var(--oracle-red);
+      border-radius: 10px;
+      padding: 14px 18px;
+      font-size: 12.5px;
+      color: var(--text-sub);
+    }
+    .aff-footer-box strong { color: var(--text-main); }
+    .aff-footer-box code {
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      background: #f1f5f9;
+      padding: 2px 6px;
+      border-radius: 4px;
+      color: #0f172a;
+    }
+
+    .portal-footer {
+      text-align: center;
+      padding: 14px 20px;
+      font-size: 12px;
+      color: var(--text-muted);
+      border-top: 1px solid var(--border-light);
+      background: #ffffff;
+    }
+
+    @media (max-width: 960px) {
+      .summary-strip { grid-template-columns: repeat(2, 1fr); }
+      .cards-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <header class="portal-header">
+    <div class="header-brand">
+      <span class="oracle-badge">Oracle Fusion Cloud ERP Financials 26D (OEDMF準拠)</span>
+      <h1>Fusion ERP Finanacialsデータフロー</h1>
+      <p class="header-sub">サブ元帳（AR / AP / AP前払 / SLA / FAH）から会計作成・GL転記・残高管理までのフローチャート＆関連資料ポータル</p>
+    </div>
+    <div class="header-links">
+      <a href="https://docs.oracle.com/en/cloud/saas/financials/26d/oedmf/index.html" target="_blank" rel="noopener noreferrer" class="btn-header">
+        📖 Fusion 26D OEDMF 公式テーブル仕様 ↗
+      </a>
+    </div>
+  </header>
+
+  <main class="container">
+    <!-- サマリKPI -->
+    <section class="summary-strip" aria-label="プロジェクト概要">
+      <div class="stat-card">
+        <div class="stat-val">5コンテンツ</div>
+        <div class="stat-lbl">公開フロー・資料フォルダ</div>
+        <div class="stat-desc">AP_STD / AP_PREPAY / AR / SLA / FAH の全ページとExcelデータを集約</div>
+      </div>
+      <div class="stat-card c-green">
+        <div class="stat-val">AFF 9セグメント</div>
+        <div class="stat-lbl">全資料共通の勘定体系</div>
+        <div class="stat-desc">会社-部門-勘定科目-補助科目-税コード-管理コード-備考1-備考2-備考3</div>
+      </div>
+      <div class="stat-card c-purple">
+        <div class="stat-val">26D OEDMF準拠</div>
+        <div class="stat-lbl">実在テーブル・カラムのみ</div>
+        <div class="stat-desc">Oracle公式ドキュメントのテーブル構造・PK/FK・フラグ遷移を再現</div>
+      </div>
+      <div class="stat-card c-amber">
+        <div class="stat-val">Excel一式完備</div>
+        <div class="stat-lbl">全データ・変更履歴色分け</div>
+        <div class="stat-desc">各フォルダからプロセス別更新色分け・計算式付きの .xlsx を出力可能</div>
+      </div>
+    </section>
+
+    <!-- フィルタバー -->
+    <div class="section-toolbar">
+      <h2>📂 コンテンツ一覧（各サブページ・Excel資料へアクセス）</h2>
+      <div class="filter-pills" id="category-filters">
+        <button type="button" class="filter-btn active" data-cat="ALL">すべて表示 (5)</button>
+        <button type="button" class="filter-btn" data-cat="AP">AP 買掛・前払 (2)</button>
+        <button type="button" class="filter-btn" data-cat="AR">AR 売掛 (1)</button>
+        <button type="button" class="filter-btn" data-cat="SLA_FAH">SLA・FAH (2)</button>
+      </div>
+    </div>
+
+    <!-- サブページカードグリッド -->
+    <section class="cards-grid" id="cards-grid">
+      <!-- 1. AP_STD -->
+      <article class="flow-card" data-category="AP">
+        <div class="card-top">
+          <div class="card-badges">
+            <span class="mod-badge bg-ap">AP 買掛管理（標準）</span>
+            <span class="folder-tag">/AP_STD/index.html</span>
+          </div>
+          <h3>AP請求計上 → 支払・取消(Void)・分割支払 → SLA → GL転記</h3>
+        </div>
+        <div class="card-body">
+          <p class="card-desc">
+            消費税（10%/8%）と源泉徴収税（10.21%/20.42%）を含む買掛請求書を計上し、初回一括支払を取消（Void）した後に明細ごと2分割して再支払する実務シナリオのフローチャートです。
+          </p>
+          <ul class="highlights">
+            <li><strong>対象範囲:</strong> 全63テーブル（サプライヤ・請求・源泉税・支払/Void・XLA・GL）</li>
+            <li><strong>サンプル明細:</strong> <code>AP-INV-2026-0001</code>（明細1 100万+税10万-源泉102,100円 / 明細2 100万+税8万-源泉204,200円 ＝ <strong>1,873,700円</strong>）</li>
+            <li><strong>見どころ:</strong> 支払取消(Void)時のステータス反転と2分割支払の会計仕訳生成</li>
+          </ul>
+        </div>
+        <div class="card-actions">
+          <a href="./AP_STD/index.html" class="btn-open">🚀 フローチャートを開く</a>
+          <a href="./AP_STD/FusionERP_26D_AP_to_GL_DataFlow.xlsx" download class="btn-dl">📥 Excel</a>
+        </div>
+      </article>
+
+      <!-- 2. AP_PREPAY -->
+      <article class="flow-card" data-category="AP">
+        <div class="card-top">
+          <div class="card-badges">
+            <span class="mod-badge bg-ap-pre">AP 買掛管理（前払金）</span>
+            <span class="folder-tag">/AP_PREPAY/index.html</span>
+          </div>
+          <h3>AP前払請求(PREPAY)作成 → 支払 → 標準請求充当 → SLA → GL転記</h3>
+        </div>
+        <div class="card-body">
+          <p class="card-desc">
+            前払請求書（PREPAY）を作成・支払して前払金残高を計上した後、標準請求書（消費税10%/8%・源泉徴収税10.21%/20.42%）に対して前払金から充当（Apply）しGL転記する流れを可視化しています。
+          </p>
+          <ul class="highlights">
+            <li><strong>対象範囲:</strong> 全65テーブル（PREPAY請求・支払・標準請求・充当履歴・XLA・GL）</li>
+            <li><strong>サンプル明細:</strong> <code>AP-PREPAY-2026-0001</code> (<strong>1,873,700円</strong>) → <code>AP-INV-2026-0001</code> へ全額充当</li>
+            <li><strong>見どころ:</strong> 前払金資産勘定の発生から標準買掛債務との相殺仕訳・残高消去</li>
+          </ul>
+        </div>
+        <div class="card-actions">
+          <a href="./AP_PREPAY/index.html" class="btn-open">🚀 フローチャートを開く</a>
+          <a href="./AP_PREPAY/FusionERP_26D_AP_PREPAY_to_GL_DataFlow.xlsx" download class="btn-dl">📥 Excel</a>
+        </div>
+      </article>
+
+      <!-- 3. AR -->
+      <article class="flow-card" data-category="AR">
+        <div class="card-top">
+          <div class="card-badges">
+            <span class="mod-badge bg-ar">AR 売掛管理</span>
+            <span class="folder-tag">/AR/index.html</span>
+          </div>
+          <h3>AR請求計上 → 入金 → 消込 → SLA → GL転記</h3>
+        </div>
+        <div class="card-body">
+          <p class="card-desc">
+            売掛トランザクション作成から入金作成、請求書との消込、SLA会計作成、GL転記・残高確定までの一連のデータフローをアニメーションで可視化したページです。
+          </p>
+          <ul class="highlights">
+            <li><strong>対象範囲:</strong> 全42テーブル（マスタ・AR取引・消込・XLA・GL）</li>
+            <li><strong>サンプル明細:</strong> 請求書 <code>INV-2026-0001</code>（明細1: 税10% / 明細2: 軽減税8% ＝ 計 <strong>164,000円</strong>）</li>
+            <li><strong>見どころ:</strong> 入金消込による売掛残高減少と <code>GL_IMPORT_REFERENCES</code> 連携</li>
+          </ul>
+        </div>
+        <div class="card-actions">
+          <a href="./AR/index.html" class="btn-open">🚀 フローチャートを開く</a>
+          <a href="./AR/FusionERP_26D_AR_to_GL_DataFlow.xlsx" download class="btn-dl">📥 Excel</a>
+        </div>
+      </article>
+
+      <!-- 4. SLA -->
+      <article class="flow-card" data-category="SLA_FAH">
+        <div class="card-top">
+          <div class="card-badges">
+            <span class="mod-badge bg-sla">SLA・FAH 統合フロー</span>
+            <span class="folder-tag">/SLA/index.html</span>
+          </div>
+          <h3>SLA・FAHセットアップ ＆ 5大サブ元帳 → GL転記 データフロー</h3>
+        </div>
+        <div class="card-body">
+          <p class="card-desc">
+            AP・AR・FA・LA・FAHの5大サブ元帳からSLAへ仕訳が生成される仕組み、SLA/FAH全9セットアップ画面モックとテーブル対応、サポート参照(残高有/無)とDFFの違いを統合可視化したページです。
+          </p>
+          <ul class="highlights">
+            <li><strong>対象範囲:</strong> 全59テーブル・68リレーション・9ステップ・9設定画面シミュレータ</li>
+            <li><strong>サポート参照:</strong> 残高有 <code>相手先</code> / 残高無 <code>外部システム・外部請求書番号・満期日・数量・単価</code></li>
+            <li><strong>見どころ:</strong> AR+FAH同一相手先の <code>XLA_AC_BALANCES</code> 統合集計（総仕訳 <strong>4,250,000円</strong>）</li>
+          </ul>
+        </div>
+        <div class="card-actions">
+          <a href="./SLA/index.html" class="btn-open">🚀 フローチャートを開く</a>
+          <a href="./SLA/FusionERP_26D_SLA_Setup_and_Flow.xlsx" download class="btn-dl">📥 Excel</a>
+        </div>
+      </article>
+
+      <!-- 5. FAH (Presentation) -->
+      <article class="flow-card" data-category="SLA_FAH">
+        <div class="card-top">
+          <div class="card-badges">
+            <span class="mod-badge bg-fah">SLA / FAH プレゼン資料</span>
+            <span class="folder-tag">/FAH/index.html</span>
+          </div>
+          <h3>SLA ＆ FAH 統合アーキテクチャ プレゼンテーション (6章・11スライド)</h3>
+        </div>
+        <div class="card-body">
+          <p class="card-desc">
+            SLAの全体構造、AP/AR/FA/LA各サブモジュール別の全セットアップ手順、FAH専用12工程セットアップ、サポート参照詳細、残高有サポート参照単位の6フェーズSLA残高管理フローをまとめたプレゼン資料です。
+          </p>
+          <ul class="highlights">
+            <li><strong>構成:</strong> 全6チャプター・11スライド（アニメ図解・モジュール切替・T字残高照合）</li>
+            <li><strong>残高管理フロー:</strong> 期首50万 + AR88万 + FAH30万 − 入金60万 ＝ <strong>108万円</strong>（GL <strong>148万円</strong> 完全照合）</li>
+            <li><strong>添付Excel:</strong> サブモジュール別セットアップ全サンプルデータ（12シート構成）</li>
+          </ul>
+        </div>
+        <div class="card-actions">
+          <a href="./FAH/index.html" class="btn-open">📽️ プレゼン資料を開く</a>
+          <a href="./FAH/FusionERP_26D_SLA_FAH_Setup_SampleData.xlsx" download class="btn-dl">📥 Excel</a>
+        </div>
+      </article>
+    </section>
+
+    <div class="aff-footer-box">
+      <strong>共通勘定体系 (AFF 9セグメント):</strong>
+      <code>会社(SEGMENT1) - 部門(SEGMENT2) - 勘定科目(SEGMENT3) - 補助科目(SEGMENT4) - 税コード(SEGMENT5) - 管理コード(SEGMENT6) - 備考1(SEGMENT7) - 備考2(SEGMENT8) - 備考3(SEGMENT9)</code>
+      <br />
+      各ページの「Excelダウンロード」ボタンから、テーブルごとの新規登録（緑）・項目更新（黄＋変更履歴コメント）付きのサンプルデータを一括取得できます。
+    </div>
+  </main>
+
+  <footer class="portal-footer">
+    Fusion ERP Finanacialsデータフロー ポータル — Oracle Fusion Cloud ERP Financials 26D (OEDMF) 準拠
+  </footer>
+
+  <script>
+    (function () {
+      const btns = document.querySelectorAll('#category-filters .filter-btn');
+      const cards = document.querySelectorAll('#cards-grid .flow-card');
+
+      btns.forEach(btn => {
+        btn.addEventListener('click', () => {
+          btns.forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          const cat = btn.getAttribute('data-cat');
+          cards.forEach(card => {
+            if (cat === 'ALL' || card.getAttribute('data-category') === cat) {
+              card.classList.remove('hidden');
+            } else {
+              card.classList.add('hidden');
+            }
+          });
+        });
+      });
+    })();
+  </script>
+</body>
+</html>

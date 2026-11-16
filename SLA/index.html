@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Oracle Fusion ERP 26D — SLA(補助元帳会計)・FAH・5大サブ元帳〜GL転記 データフロー＆セットアップ可視化</title>
+  <link rel="stylesheet" href="styles.css" />
+  <style>
+    .portal-subnav { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 7px 24px; background: #020617; color: #e2e8f0; border-bottom: 1px solid #334155; font-size: 12px; flex-wrap: wrap; }
+    .psnav-pager { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .psnav-btn { display: inline-flex; align-items: center; gap: 5px; padding: 4px 11px; border-radius: 6px; background: #1e293b; color: #f8fafc; text-decoration: none; font-weight: 700; border: 1px solid #475569; transition: background 0.15s; }
+    .psnav-btn:hover { background: #2563eb; border-color: #3b82f6; }
+    .psnav-home { background: #334155; }
+    .psnav-pos { color: #94a3b8; font-weight: 700; padding: 0 4px; }
+    .psnav-disabled { display: inline-flex; align-items: center; padding: 4px 11px; border-radius: 6px; background: #0f172a; color: #475569; border: 1px solid #1e293b; font-weight: 700; cursor: not-allowed; }
+  </style>
+</head>
+<body>
+  <nav class="portal-subnav" aria-label="ページ遷移ナビゲーション">
+    <a href="../index.html" class="psnav-btn psnav-home">🏠 メインページへ戻る</a>
+    <div class="psnav-pager">
+      <a href="../AR/index.html" class="psnav-btn">◀ 前のページ：AR 売掛管理</a>
+      <span class="psnav-pos">4 / 5：SLA・FAH 統合フロー</span>
+      <a href="../FAH/index.html" class="psnav-btn">次のページ：SLA / FAH プレゼン資料 ▶</a>
+    </div>
+  </nav>
+  <!-- ヘッダー -->
+  <header class="app-header">
+    <div class="header-left">
+      <div class="oracle-badge">Oracle Fusion ERP Financials 26D</div>
+      <div>
+        <h1>SLA(補助元帳会計)・FAHセットアップ ＆ 5大サブ元帳→GL転記 データフロー</h1>
+        <p class="subtitle">AP・AR・FA・LA・FAH 取引から ユーザー定義算式・ADR・JLT・サポート参照(残高有/無)・JERS 経由の GL_BALANCES 確定まで（全59テーブル・68リレーション）</p>
+      </div>
+    </div>
+    <div class="header-actions">
+      <button id="btn-setup-modal" class="btn btn-secondary" title="SLA・FAH 全9セットアップ画面とOEDMFテーブル対応を確認">⚙️ SLA/FAHセットアップ画面 (9工程)</button>
+      <button id="btn-srdff-modal" class="btn btn-secondary" title="サポート参照(残高有/無)とDFFの設計・テーブル・集計違いを比較">⚖️ サポート参照 vs DFF比較</button>
+      <button id="btn-aff-modal" class="btn btn-secondary" title="AFF 9セグメント体系＆勘定一覧を確認">🗂️ AFF 9セグメント</button>
+      <button id="btn-er-modal" class="btn btn-secondary" title="OEDMF 26D 全テーブルリレーション一覧">🔗 ER一覧 (68件)</button>
+      <a href="./FusionERP_26D_SLA_Setup_and_Flow.xlsx" download class="btn btn-primary" title="プロセス×全テーブル・セットアップ＆取引データのExcelをダウンロード">📥 Excelデータ出力 (.xlsx)</a>
+    </div>
+  </header>
+
+  <!-- アニメーション制御バー（ステップタイムライン） -->
+  <section class="timeline-bar">
+    <div class="playback-controls">
+      <button id="btn-first" class="ctrl-btn" title="最初のステップ (S0)">⏮️</button>
+      <button id="btn-prev" class="ctrl-btn" title="前へ">◀️</button>
+      <button id="btn-play" class="ctrl-btn play-btn" title="自動再生 / 一時停止">▶️ 再生</button>
+      <button id="btn-next" class="ctrl-btn" title="次へ">▶️</button>
+      <button id="btn-last" class="ctrl-btn" title="最後のステップ (S8)">⏭️</button>
+      <select id="speed-select" class="speed-select" title="再生速度">
+        <option value="4500">標準 (4.5秒)</option>
+        <option value="2500">やや速い (2.5秒)</option>
+        <option value="7000">じっくり (7秒)</option>
+      </select>
+    </div>
+
+    <div class="step-pills" id="step-pills">
+      <!-- app.js により動的生成 (9ステップ) -->
+    </div>
+  </section>
+
+  <!-- 凡例バー -->
+  <section class="legend-bar">
+    <div class="legend-items">
+      <span class="legend-item"><span class="dot dot-inserted"></span>新規作成 (INSERT)</span>
+      <span class="legend-item"><span class="dot dot-updated"></span>項目更新 (UPDATE)</span>
+      <span class="legend-item"><span class="dot dot-ins-upd"></span>新規＋更新 (INS/UPD)</span>
+      <span class="legend-item"><span class="dot dot-referenced"></span>ルール・マスタ参照 (READ)</span>
+      <span class="legend-item"><span class="dot dot-existing"></span>既存データ保持 (済)</span>
+      <span class="legend-item"><span class="dot dot-not-created"></span>未生成</span>
+      <span class="legend-item"><span class="line-sample"></span>データ連携パルス（クリックで対象テーブル確認）</span>
+    </div>
+    <div class="view-toggles">
+      <button id="btn-fit-svg" class="btn-mini">🔍 全体表示</button>
+    </div>
+  </section>
+
+  <!-- メインステージ: フローチャート図 ＋ ステップ解説パネル -->
+  <main class="main-stage">
+    <div class="canvas-pane">
+      <div class="svg-wrapper" id="svg-wrapper">
+        <svg id="flow-svg" viewBox="0 0 1660 1220" preserveAspectRatio="xMidYMid meet"></svg>
+        <div class="svg-step-indicator" id="svg-step-indicator"></div>
+      </div>
+    </div>
+
+    <aside class="info-panel">
+      <div class="step-header-card">
+        <div class="step-badge-row">
+          <span class="step-code" id="info-step-code">S0</span>
+          <span class="step-date" id="info-step-date">事前設定①</span>
+        </div>
+        <h2 id="info-step-title">STEPタイトル</h2>
+        <p class="step-subtitle" id="info-step-subtitle">サブタイトル</p>
+      </div>
+
+      <div class="info-section">
+        <h3>📝 プロセス概要</h3>
+        <div id="info-description" class="desc-list"></div>
+      </div>
+
+      <div class="info-section">
+        <h3>🚩 このステップで更新されるフラグ・状態</h3>
+        <ul id="info-flag-changes" class="flag-list"></ul>
+      </div>
+
+      <div class="info-section">
+        <h3>📒 会計・サポート参照・残高プレビュー</h3>
+        <div id="info-journal-preview" class="journal-preview"></div>
+      </div>
+    </aside>
+  </main>
+
+  <!-- SLA・FAH セットアップ画面＆サポート参照 vs DFF インタラクティブ・ワークベンチ -->
+  <section class="workbench-section" id="sla-workbench-section">
+    <div class="workbench-header">
+      <div>
+        <h2>⚙️ SLA・FAH 全9セットアップ画面シミュレーション ＆ サポート参照 vs DFF 徹底比較</h2>
+        <p class="workbench-subtitle">Fusion Setup UIの各設定画面入力と、裏側で更新されるOEDMF 26Dテーブル群（XLA_*）の実レコード対応を確認できます</p>
+      </div>
+      <div class="workbench-controls">
+        <button id="btn-toggle-workbench" class="btn-mini">▼ ワークベンチを展開/収納</button>
+      </div>
+    </div>
+    <div class="workbench-body" id="sla-workbench-body">
+      <div class="workbench-grid">
+        <div class="workbench-setup-pane">
+          <div class="setup-tabs-nav" id="setup-screens-nav"></div>
+          <div class="setup-screen-detail" id="setup-screen-detail"></div>
+        </div>
+        <div class="workbench-srdff-pane">
+          <div id="sr-dff-compare-container"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 下段: 全テーブル・全カラム・実データ インスペクタ -->
+  <section class="inspector-section" id="inspector-section">
+    <div class="inspector-header">
+      <div class="inspector-title">
+        <h2>🗃️ OEDMF 26D 全テーブル・全項目 データインスペクタ <span class="badge-count">全59テーブル</span></h2>
+        <p>上の図でテーブルをクリックするか、下記フィルタで絞り込み。プロセスごとに <span class="hl-ins-text">緑＝新規INSERT</span>・<span class="hl-upd-text">黄＝更新UPDATE（旧→新）</span> がハイライトされます。</p>
+      </div>
+      <div class="inspector-filters">
+        <select id="domain-filter" class="filter-select">
+          <option value="ALL">全領域を表示 (59テーブル)</option>
+          <option value="ORG_GL_MASTER">A. 組織・GL基本マスタ (6)</option>
+          <option value="SLA_EVENT_FAH_SETUP">B. SLAイベントモデル & FAH基盤 (6)</option>
+          <option value="SLA_AMB_RULES">C. SLAルールセット(AMB:算式/ADR/JLT/SR/JERS) (19)</option>
+          <option value="SUBLEDGER_TXNS">D. 5大サブ元帳取引 (AP·AR·FA·LA·FAH) (15)</option>
+          <option value="SLA_ENGINE_OUTPUT">E. SLA会計エンジン出力 & SR残高 (7)</option>
+          <option value="GL_LEDGER">F. GL転送・仕訳・確定残高 (6)</option>
+        </select>
+        <input type="text" id="table-search" class="search-input" placeholder="テーブル名・項目名・値で検索 (例: XLA_AC_BALANCES, SR_EXT_TRACE)..." />
+        <label class="chk-label">
+          <input type="checkbox" id="chk-show-aff" checked /> CCIDにAFF 9セグメントを表示
+        </label>
+      </div>
+    </div>
+
+    <div id="selected-banner" class="selected-banner hidden">
+      <span>選択中のテーブル: <strong id="selected-table-name"></strong></span>
+      <button id="btn-clear-selection" class="btn-mini">✕ 選択解除して全て表示</button>
+    </div>
+
+    <div id="tables-container" class="tables-container">
+      <!-- app.js で全テーブルカードをレンダリング -->
+    </div>
+  </section>
+
+  <!-- SLA/FAH セットアップ画面一覧 モーダル -->
+  <div id="setup-modal" class="modal hidden">
+    <div class="modal-content modal-wide">
+      <div class="modal-header">
+        <h3>⚙️ SLA・FAH 全9セットアップ画面 ＆ OEDMF 26D テーブル対応マップ</h3>
+        <button class="modal-close" data-close="setup-modal">✕</button>
+      </div>
+      <div class="modal-body" id="setup-modal-body"></div>
+    </div>
+  </div>
+
+  <!-- サポート参照 vs DFF 徹底比較 モーダル -->
+  <div id="srdff-modal" class="modal hidden">
+    <div class="modal-content modal-wide">
+      <div class="modal-header">
+        <h3>⚖️ サポート参照 (残高有 / 残高無) vs DFF (付加フレックスフィールド) 設計比較</h3>
+        <button class="modal-close" data-close="srdff-modal">✕</button>
+      </div>
+      <div class="modal-body" id="srdff-modal-body"></div>
+    </div>
+  </div>
+
+  <!-- AFF構成モーダル -->
+  <div id="aff-modal" class="modal hidden">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>🗂️ AFF (Accounting Flexfield) 9セグメント体系</h3>
+        <button class="modal-close" data-close="aff-modal">✕</button>
+      </div>
+      <div class="modal-body" id="aff-modal-body"></div>
+    </div>
+  </div>
+
+  <!-- ERリレーションモーダル -->
+  <div id="er-modal" class="modal hidden">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>🔗 Oracle Fusion ERP 26D — テーブル間リレーション一覧（全68件）</h3>
+        <button class="modal-close" data-close="er-modal">✕</button>
+      </div>
+      <div class="modal-body" id="er-modal-body"></div>
+    </div>
+  </div>
+
+  <script src="data.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
