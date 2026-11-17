@@ -236,21 +236,18 @@
     .bg-sla { background: #7e22ce; }
     .bg-fah { background: #be123c; }
 
-    .folder-tag {
-      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-      font-size: 11px;
-      font-weight: 700;
-      color: var(--text-sub);
-      background: #e2e8f0;
-      padding: 2px 8px;
-      border-radius: 5px;
-    }
-
     .card-top h3 {
       margin: 0;
-      font-size: 16px;
+      font-size: 16.5px;
       font-weight: 800;
       color: var(--text-main);
+    }
+
+    .card-flow-sub {
+      margin: 4px 0 0;
+      font-size: 12.5px;
+      font-weight: 700;
+      color: var(--primary);
     }
 
     .card-body {
@@ -425,9 +422,9 @@
         <div class="card-top">
           <div class="card-badges">
             <span class="mod-badge bg-ap">AP 買掛管理（標準）</span>
-            <span class="folder-tag">/AP_STD/index.html</span>
           </div>
-          <h3>AP請求計上 → 支払・取消(Void)・分割支払 → SLA → GL転記</h3>
+          <h3>1. AP請求計上</h3>
+          <p class="card-flow-sub">支払・取消(Void)・分割支払 → SLA → GL転記</p>
         </div>
         <div class="card-body">
           <p class="card-desc">
@@ -450,9 +447,9 @@
         <div class="card-top">
           <div class="card-badges">
             <span class="mod-badge bg-ap-pre">AP 買掛管理（前払金）</span>
-            <span class="folder-tag">/AP_PREPAY/index.html</span>
           </div>
-          <h3>AP前払請求(PREPAY)作成 → 支払 → 標準請求充当 → SLA → GL転記</h3>
+          <h3>2. AP前払請求(PREPAY)</h3>
+          <p class="card-flow-sub">作成 → 支払 → 標準請求充当 → SLA → GL転記</p>
         </div>
         <div class="card-body">
           <p class="card-desc">
@@ -475,9 +472,9 @@
         <div class="card-top">
           <div class="card-badges">
             <span class="mod-badge bg-ar">AR 売掛管理</span>
-            <span class="folder-tag">/AR/index.html</span>
           </div>
-          <h3>AR請求計上 → 入金 → 消込 → SLA → GL転記</h3>
+          <h3>3. AR請求計上</h3>
+          <p class="card-flow-sub">入金 → 消込 → SLA → GL転記</p>
         </div>
         <div class="card-body">
           <p class="card-desc">
@@ -500,9 +497,9 @@
         <div class="card-top">
           <div class="card-badges">
             <span class="mod-badge bg-sla">SLA・FAH 統合フロー</span>
-            <span class="folder-tag">/SLA/index.html</span>
           </div>
-          <h3>SLA・FAHセットアップ ＆ 5大サブ元帳 → GL転記 データフロー</h3>
+          <h3>4. SLA・FAHセットアップ</h3>
+          <p class="card-flow-sub">5大サブ元帳 → SLA仕訳作成 → GL転記 データフロー</p>
         </div>
         <div class="card-body">
           <p class="card-desc">
@@ -525,9 +522,9 @@
         <div class="card-top">
           <div class="card-badges">
             <span class="mod-badge bg-fah">SLA / FAH プレゼン資料</span>
-            <span class="folder-tag">/FAH/index.html</span>
           </div>
-          <h3>SLA ＆ FAH 統合アーキテクチャ プレゼンテーション (6章・11スライド)</h3>
+          <h3>5. SLA ＆ FAH 統合アーキテクチャ</h3>
+          <p class="card-flow-sub">プレゼンテーション資料 (6章・11スライド)</p>
         </div>
         <div class="card-body">
           <p class="card-desc">
