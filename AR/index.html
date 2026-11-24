@@ -8,11 +8,11 @@
   <style>
     .portal-subnav { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 7px 24px; background: #020617; color: #e2e8f0; border-bottom: 1px solid #334155; font-size: 12px; flex-wrap: wrap; }
     .psnav-pager { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-    .psnav-btn { display: inline-flex; align-items: center; gap: 5px; padding: 4px 11px; border-radius: 6px; background: #1e293b; color: #f8fafc; text-decoration: none; font-weight: 700; border: 1px solid #475569; transition: background 0.15s; }
+    .psnav-btn { display: inline-flex; align-items: center; gap: 5px; padding: 4px 11px; border-radius: 6px; background: #1e293b; color: #f8fafc; text-decoration: none; font-weight: 700; border: 1px solid #475569; white-space: nowrap; transition: background 0.15s; }
     .psnav-btn:hover { background: #2563eb; border-color: #3b82f6; }
     .psnav-home { background: #334155; }
-    .psnav-pos { color: #94a3b8; font-weight: 700; padding: 0 4px; }
-    .psnav-disabled { display: inline-flex; align-items: center; padding: 4px 11px; border-radius: 6px; background: #0f172a; color: #475569; border: 1px solid #1e293b; font-weight: 700; cursor: not-allowed; }
+    .psnav-pos { color: #94a3b8; font-weight: 700; padding: 0 4px; white-space: nowrap; }
+    .psnav-disabled { display: inline-flex; align-items: center; padding: 4px 11px; border-radius: 6px; background: #0f172a; color: #475569; border: 1px solid #1e293b; font-weight: 700; white-space: nowrap; cursor: not-allowed; }
   </style>
 </head>
 <body>
@@ -20,7 +20,7 @@
     <a href="../index.html" class="psnav-btn psnav-home">🏠 メインページへ戻る</a>
     <div class="psnav-pager">
       <a href="../AP_PREPAY/index.html" class="psnav-btn">◀ 前のページ：AP 買掛管理（前払金）</a>
-      <span class="psnav-pos">3 / 5：AR 売掛管理</span>
+      <span class="psnav-pos">3 / 8：AR 売掛管理</span>
       <a href="../SLA/index.html" class="psnav-btn">次のページ：SLA・FAH 統合フロー ▶</a>
     </div>
   </nav>

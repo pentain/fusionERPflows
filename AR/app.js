@@ -158,11 +158,31 @@
     return `M ${x1} ${y1} C ${x1 + dx} ${y1 + dy}, ${x2 - dx} ${y2 - dy}, ${x2} ${y2}`;
   }
 
+  function estSvgTextWidth(str, fontSize, isMono) {
+    let w = 0;
+    for (const ch of String(str || '')) {
+      w += ch.charCodeAt(0) <= 0x7f ? fontSize * (isMono ? 0.65 : 0.62) : fontSize * 1.06;
+    }
+    return w;
+  }
+
+  function fitSvgText(str, maxPx, fontSize, isMono) {
+    const s = String(str || '');
+    if (estSvgTextWidth(s, fontSize, isMono) <= maxPx) return s;
+    let out = '';
+    const ellW = fontSize * 1.06;
+    for (const ch of s) {
+      if (estSvgTextWidth(out + ch, fontSize, isMono) + ellW > maxPx) break;
+      out += ch;
+    }
+    return out + '…';
+  }
+
   function renderSvgDiagram(snapshot) {
     const svg = elFlowSvg;
     svg.innerHTML = '';
 
-    // Defs (矢印マーカー & グロウ)
+    // Defs (矢印マーカー & グロウ + ノードクリップ)
     const defs = createSvgEl('defs');
     const markers = [
       { id: 'arrow-insert', color: '#16a34a' },
@@ -178,6 +198,14 @@
       marker.appendChild(createSvgEl('path', { d: 'M 0 1 L 10 5 L 0 9 z', fill: m.color }));
       defs.appendChild(marker);
     });
+    TABLES.forEach((tbl, i) => {
+      const cp = createSvgEl('clipPath', { id: `clip-ar-node-${i}` });
+      cp.appendChild(createSvgEl('rect', {
+        x: tbl.pos.x + 1, y: tbl.pos.y + 1,
+        width: Math.max(10, tbl.pos.w - 2), height: Math.max(10, tbl.pos.h - 2), rx: 5
+      }));
+      defs.appendChild(cp);
+    });
     svg.appendChild(defs);
 
     // 1. ドメイン背景レーン
@@ -191,11 +219,15 @@
         x: d.x, y: d.y, width: d.w, height: 24, rx: 10, fill: d.color
       });
       g.appendChild(titleBg);
+      const unitDomW = estSvgTextWidth(d.name, 1, false) || 1;
+      const domFs = estSvgTextWidth(d.name, 11.5, false) > d.w - 18
+        ? Math.max(9.2, (d.w - 18) / unitDomW)
+        : 11.5;
       const txt = createSvgEl('text', {
         x: d.x + 10, y: d.y + 16, fill: '#ffffff',
-        'font-size': '11.5', 'font-weight': '700'
+        'font-size': domFs.toFixed(1), 'font-weight': '700'
       });
-      txt.textContent = d.name;
+      txt.textContent = fitSvgText(d.name, d.w - 18, domFs, false);
       g.appendChild(txt);
       svg.appendChild(g);
     });
@@ -216,7 +248,7 @@
     svg.appendChild(baseEdgeGroup);
 
     // 3. テーブルノード描画
-    TABLES.forEach(tbl => {
+    TABLES.forEach((tbl, i) => {
       const st = snapshot.tablesState[tbl.id];
       const stateCls = `state-${st.tableState === 'inserted_updated' ? 'updated' : st.tableState}`;
       const isSelected = selectedTableId === tbl.id;
@@ -230,41 +262,56 @@
         class: 'node-box', x, y, width: w, height: h, rx: 6
       }));
 
-      // テーブル名
-      const nameEl = createSvgEl('text', {
-        x: x + 7, y: y + 16,
-        fill: '#0f172a', 'font-size': w > 200 ? '10.8' : '8.8', 'font-weight': '800',
-        'font-family': 'ui-monospace, SFMono-Regular, Menlo, monospace'
-      });
-      const maxChars = w > 250 ? 33 : 22;
-      nameEl.textContent = tbl.name.length > maxChars ? tbl.name.slice(0, maxChars - 1) + '…' : tbl.name;
-      g.appendChild(nameEl);
-
-      // 日本語名 + 件数
-      const subEl = createSvgEl('text', {
-        x: x + 7, y: y + 32,
-        fill: '#475569', 'font-size': w > 200 ? '10' : '8.5', 'font-weight': '600'
-      });
-      const jpShort = tbl.jpName.length > (w > 250 ? 22 : 12)
-        ? tbl.jpName.slice(0, (w > 250 ? 21 : 11)) + '…'
-        : tbl.jpName;
-      subEl.textContent = `${jpShort} (${st.rows.length}件)`;
-      g.appendChild(subEl);
-
-      // 状態バッジ (右上)
+      // 状態バッジ判定 (狭いノードではスリム化)
       let badgeLabel = '';
       let badgeFill = '';
       if (st.tableState === 'inserted') { badgeLabel = 'NEW'; badgeFill = '#16a34a'; }
       else if (st.tableState === 'updated' || st.tableState === 'inserted_updated') { badgeLabel = 'UPD'; badgeFill = '#ea580c'; }
       else if (st.tableState === 'referenced') { badgeLabel = 'REF'; badgeFill = '#0284c7'; }
 
+      const isNarrow = w <= 165;
+      const bWidth = isNarrow ? 26 : 30;
+      const bHeight = isNarrow ? 13 : 14;
+      const bRightOffset = isNarrow ? 30 : 34;
+
+      const textGroup = createSvgEl('g', { 'clip-path': `url(#clip-ar-node-${i})` });
+
+      // テーブル名
+      const avail1 = badgeLabel ? (w - (isNarrow ? 39 : 43)) : (w - 14);
+      let fsName = w > 200 ? 10.6 : 8.2;
+      if (estSvgTextWidth(tbl.name, fsName, true) > avail1) {
+        const unitN = estSvgTextWidth(tbl.name, 1, true) || 1;
+        fsName = Math.max(7.8, avail1 / unitN);
+      }
+      const nameEl = createSvgEl('text', {
+        x: x + 7, y: y + 16,
+        fill: '#0f172a', 'font-size': fsName.toFixed(1), 'font-weight': '800',
+        'font-family': 'ui-monospace, SFMono-Regular, Menlo, monospace'
+      });
+      nameEl.textContent = fitSvgText(tbl.name, avail1, fsName, true);
+      textGroup.appendChild(nameEl);
+
+      // 日本語名 + 件数
+      const fsJp = w > 200 ? 10 : 8.4;
+      const cntSuffix = ` (${st.rows.length}件)`;
+      const cntW = estSvgTextWidth(cntSuffix, fsJp, false);
+      const availJp = Math.max(24, w - 14 - cntW);
+      const jpShort = fitSvgText(tbl.jpName, availJp, fsJp, false);
+      const subEl = createSvgEl('text', {
+        x: x + 7, y: y + 32,
+        fill: '#475569', 'font-size': String(fsJp), 'font-weight': '600'
+      });
+      subEl.textContent = `${jpShort}${cntSuffix}`;
+      textGroup.appendChild(subEl);
+      g.appendChild(textGroup);
+
       if (badgeLabel) {
         g.appendChild(createSvgEl('rect', {
-          x: x + w - 34, y: y + 4, width: 30, height: 14, rx: 3, fill: badgeFill
+          x: x + w - bRightOffset, y: y + 4, width: bWidth, height: bHeight, rx: 3, fill: badgeFill
         }));
         const bTxt = createSvgEl('text', {
-          x: x + w - 19, y: y + 14, fill: '#fff',
-          'font-size': '8.5', 'font-weight': '800', 'text-anchor': 'middle'
+          x: x + w - bRightOffset + bWidth / 2, y: y + (isNarrow ? 13.5 : 14), fill: '#fff',
+          'font-size': isNarrow ? '7.8' : '8.5', 'font-weight': '800', 'text-anchor': 'middle'
         });
         bTxt.textContent = badgeLabel;
         g.appendChild(bTxt);
@@ -323,7 +370,7 @@
       // ラベルチップ
       const mx = (x1 + x2) / 2;
       const my = (y1 + y2) / 2 - 4;
-      const lw = edge.label.length * 7 + 14;
+      const lw = Math.max(50, Math.ceil(estSvgTextWidth(edge.label, 9.0, false) + 18));
       activeEdgesGroup.appendChild(createSvgEl('rect', {
         x: mx - lw / 2, y: my - 9, width: lw, height: 16, rx: 4,
         fill: '#ffffff', stroke: strokeColor, 'stroke-width': '1.2', 'fill-opacity': '0.94'

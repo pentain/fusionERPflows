@@ -48,6 +48,49 @@
     return el;
   }
 
+  function estSvgTextWidth(str, fontSize, isMono = false) {
+    let w = 0;
+    for (const ch of String(str || '')) {
+      w += ch.charCodeAt(0) <= 0x7f ? fontSize * (isMono ? 0.65 : 0.62) : fontSize * 1.06;
+    }
+    return w;
+  }
+
+  function fitSvgText(str, maxPx, fontSize, isMono = false) {
+    const s = String(str || '');
+    if (estSvgTextWidth(s, fontSize, isMono) <= maxPx) return s;
+    let out = '';
+    const ellW = fontSize * 1.06;
+    for (const ch of s) {
+      if (estSvgTextWidth(out + ch, fontSize, isMono) + ellW > maxPx) break;
+      out += ch;
+    }
+    return out + '…';
+  }
+
+  function splitSubTwoLines(str, maxPx, fontSize) {
+    const s = String(str || '');
+    if (estSvgTextWidth(s, fontSize, false) <= maxPx) return [s];
+    const parts = s.split(' · ');
+    if (parts.length > 1) {
+      let line1 = '';
+      for (let i = 0; i < parts.length; i++) {
+        const cand = line1 ? `${line1} · ${parts[i]}` : parts[i];
+        if (i === 0 || estSvgTextWidth(cand, fontSize, false) <= maxPx) {
+          line1 = cand;
+        } else {
+          const line2 = parts.slice(i).join(' · ');
+          return [line1, line2];
+        }
+      }
+    }
+    const mid = Math.ceil(s.length / 2);
+    const spaceIdx = s.lastIndexOf(' ', mid + 4);
+    const slashIdx = s.lastIndexOf('/', mid + 4);
+    const cut = Math.max(spaceIdx, slashIdx) > 4 ? Math.max(spaceIdx, slashIdx) + 1 : mid;
+    return [s.slice(0, cut).trim(), s.slice(cut).trim()];
+  }
+
   function stopAllSlideTimers() {
     if (mechTimer) { clearInterval(mechTimer); mechTimer = null; }
     if (srBalTimer) { clearInterval(srBalTimer); srBalTimer = null; }
@@ -217,6 +260,11 @@
     const marker = svgEl('marker', { id: 'm-arr', viewBox: '0 0 10 10', refX: '8', refY: '5', markerWidth: '6', markerHeight: '6', orient: 'auto' });
     marker.appendChild(svgEl('path', { d: 'M 0 1 L 9 5 L 0 9 z', fill: '#ea580c' }));
     defs.appendChild(marker);
+    D.MECHANISM_NODES.forEach(n => {
+      const cp = svgEl('clipPath', { id: `clip-mech-${n.id}` });
+      cp.appendChild(svgEl('rect', { x: n.x + 2, y: n.y + 2, width: Math.max(10, n.w - 4), height: Math.max(10, n.h - 4), rx: 7 }));
+      defs.appendChild(cp);
+    });
     svg.appendChild(defs);
 
     // 4段階背景レーン
@@ -248,10 +296,10 @@
         sx = f.x + f.w / 2; sy = f.y + f.h;
         ex = t.x + t.w / 2; ey = t.y;
       }
-      const mx = (sx + ex) / 2;
+      const mxRaw = (sx + ex) / 2;
       const my = (sy + ey) / 2;
       const d = Math.abs(ex - sx) > Math.abs(ey - sy)
-        ? `M ${sx} ${sy} C ${mx} ${sy}, ${mx} ${ey}, ${ex} ${ey}`
+        ? `M ${sx} ${sy} C ${mxRaw} ${sy}, ${mxRaw} ${ey}, ${ex} ${ey}`
         : `M ${sx} ${sy} C ${sx} ${my}, ${ex} ${my}, ${ex} ${ey}`;
       const pid = `mf-${mechStepIdx}-${i}`;
       svg.appendChild(svgEl('path', { id: pid, d, class: 'anim-flow-line', 'marker-end': 'url(#m-arr)' }));
@@ -264,9 +312,10 @@
       svg.appendChild(c);
 
       if (fl.label) {
-        const w = Math.max(52, fl.label.length * 7 + 14);
-        svg.appendChild(svgEl('rect', { x: mx - w / 2, y: my - 9, width: w, height: 16, rx: 4, fill: '#fff7ed', stroke: '#ea580c' }));
-        svg.appendChild(svgEl('text', { x: mx, y: my + 2.5, fill: '#9a3412', 'font-size': '9.5', 'font-weight': '800', 'text-anchor': 'middle' }, fl.label));
+        const w = Math.max(54, Math.ceil(estSvgTextWidth(fl.label, 9.2, false) + 18));
+        const mx = Math.max(w / 2 + 6, Math.min(1250 - w / 2 - 6, mxRaw));
+        svg.appendChild(svgEl('rect', { x: mx - w / 2, y: my - 9, width: w, height: 17, rx: 4, fill: '#fff7ed', stroke: '#ea580c' }));
+        svg.appendChild(svgEl('text', { x: mx, y: my + 3, fill: '#9a3412', 'font-size': '9.2', 'font-weight': '800', 'text-anchor': 'middle' }, fl.label));
       }
     });
 
@@ -279,11 +328,41 @@
       const badgeBg = isActive ? '#16a34a' : (isDone ? '#2563eb' : '#64748b');
       const g = svgEl('g', { class: isActive ? 'node-active' : '', opacity: (isActive || isDone) ? '1' : '0.68' });
       g.appendChild(svgEl('rect', { x: n.x, y: n.y, width: n.w, height: n.h, rx: 8, fill, stroke, 'stroke-width': isActive ? '2.5' : '1.6' }));
-      g.appendChild(svgEl('text', { x: n.x + 10, y: n.y + 20, fill: '#0f172a', 'font-size': '11.5', 'font-weight': '800' }, n.title));
-      g.appendChild(svgEl('text', { x: n.x + 10, y: n.y + 39, fill: '#475569', 'font-size': '9.5', 'font-weight': '600' }, n.sub));
-      const bw = Math.max(46, n.badge.length * 6.5 + 12);
-      g.appendChild(svgEl('rect', { x: n.x + n.w - bw - 6, y: n.y + 5, width: bw, height: 15, rx: 4, fill: badgeBg }));
-      g.appendChild(svgEl('text', { x: n.x + n.w - bw / 2 - 6, y: n.y + 15.5, fill: '#fff', 'font-size': '8.8', 'font-weight': '800', 'text-anchor': 'middle' }, n.badge));
+
+      const badgeFs = 8.0;
+      const bw = Math.max(44, Math.ceil(estSvgTextWidth(n.badge, badgeFs, false) + 12));
+      g.appendChild(svgEl('rect', { x: n.x + n.w - bw - 6, y: n.y + 5, width: bw, height: 14, rx: 4, fill: badgeBg }));
+      g.appendChild(svgEl('text', { x: n.x + n.w - bw / 2 - 6, y: n.y + 15, fill: '#fff', 'font-size': String(badgeFs), 'font-weight': '800', 'text-anchor': 'middle' }, n.badge));
+
+      const textG = svgEl('g', { 'clip-path': `url(#clip-mech-${n.id})` });
+      if (n.h >= 66) {
+        // 中・大型ノード: 右上バッジの下にタイトルとサブ(最大2行)を分離配置
+        const availW = n.w - 18;
+        const unitT = estSvgTextWidth(n.title, 1, false) || 1;
+        const tFs = Math.min(11.2, Math.max(8.5, availW / unitT));
+        textG.appendChild(svgEl('text', { x: n.x + 9, y: n.y + 33, fill: '#0f172a', 'font-size': tFs.toFixed(1), 'font-weight': '800' }, fitSvgText(n.title, availW, tFs, false)));
+
+        const subFs = 9.0;
+        const subLines = splitSubTwoLines(n.sub, availW, subFs);
+        const subTextEl = svgEl('text', { x: n.x + 9, y: n.y + 49, fill: '#475569', 'font-size': String(subFs), 'font-weight': '600' });
+        subLines.forEach((ln, idx) => {
+          const lineFit = fitSvgText(ln, availW, subFs, false);
+          subTextEl.appendChild(svgEl('tspan', { x: n.x + 9, y: n.y + (idx === 0 ? 49 : 62) }, lineFit));
+        });
+        textG.appendChild(subTextEl);
+      } else {
+        // 左列5ノード (h=58): 1行目左にタイトル、右にバッジ、2行目にサブ
+        const avail1 = Math.max(40, n.w - 10 - bw - 12);
+        const unitT = estSvgTextWidth(n.title, 1, false) || 1;
+        const tFs = Math.min(11.0, Math.max(8.5, avail1 / unitT));
+        textG.appendChild(svgEl('text', { x: n.x + 9, y: n.y + 20, fill: '#0f172a', 'font-size': tFs.toFixed(1), 'font-weight': '800' }, fitSvgText(n.title, avail1, tFs, false)));
+
+        const avail2 = n.w - 18;
+        const unitS = estSvgTextWidth(n.sub, 1, false) || 1;
+        const sFs = Math.min(9.5, Math.max(8.2, avail2 / unitS));
+        textG.appendChild(svgEl('text', { x: n.x + 9, y: n.y + 40, fill: '#475569', 'font-size': sFs.toFixed(1), 'font-weight': '600' }, fitSvgText(n.sub, avail2, sFs, false)));
+      }
+      g.appendChild(textG);
       svg.appendChild(g);
     });
   }
@@ -299,52 +378,52 @@
             </marker>
           </defs>
           <!-- Tree Connections -->
-          <path d="M 220 65 L 300 65" stroke="#2563eb" stroke-width="2.2" marker-end="url(#h-arr)" />
-          <path d="M 520 65 L 600 65" stroke="#2563eb" stroke-width="2.2" marker-end="url(#h-arr)" />
-          <path d="M 830 65 L 900 65" stroke="#2563eb" stroke-width="2.2" marker-end="url(#h-arr)" />
-          <!-- Branch down from JERS (x=900..1180) -->
-          <path d="M 1040 100 L 1040 135" stroke="#7e22ce" stroke-width="2" />
-          <path d="M 150 135 L 1040 135" stroke="#7e22ce" stroke-width="2" />
+          <path d="M 210 65 L 246 65" stroke="#2563eb" stroke-width="2.2" marker-end="url(#h-arr)" />
+          <path d="M 516 65 L 552 65" stroke="#2563eb" stroke-width="2.2" marker-end="url(#h-arr)" />
+          <path d="M 840 65 L 876 65" stroke="#2563eb" stroke-width="2.2" marker-end="url(#h-arr)" />
+          <!-- Branch down from JERS (x=878..1182) -->
+          <path d="M 1030 100 L 1030 135" stroke="#7e22ce" stroke-width="2" />
+          <path d="M 150 135 L 1030 135" stroke="#7e22ce" stroke-width="2" />
           <path d="M 150 135 L 150 165" stroke="#7e22ce" stroke-width="2" marker-end="url(#h-arr)" />
           <path d="M 435 135 L 435 165" stroke="#7e22ce" stroke-width="2" marker-end="url(#h-arr)" />
           <path d="M 720 135 L 720 165" stroke="#7e22ce" stroke-width="2" marker-end="url(#h-arr)" />
-          <path d="M 1040 135 L 1040 165" stroke="#7e22ce" stroke-width="2" marker-end="url(#h-arr)" />
+          <path d="M 1030 135 L 1030 165" stroke="#7e22ce" stroke-width="2" marker-end="url(#h-arr)" />
           <path d="M 150 230 L 150 258" stroke="#ea580c" stroke-width="2" marker-end="url(#h-arr)" />
           <path d="M 435 230 L 435 258" stroke="#ea580c" stroke-width="2" marker-end="url(#h-arr)" />
 
           <!-- Top Row -->
-          <rect x="20" y="30" width="200" height="70" rx="10" fill="#dbeafe" stroke="#1d4ed8" stroke-width="2"/>
-          <text x="120" y="55" text-anchor="middle" font-size="13" font-weight="800" fill="#1e3a8a">1. GL_LEDGERS</text>
-          <text x="120" y="76" text-anchor="middle" font-size="11" fill="#334155">JP_CORP_LEDGER (300001)</text>
+          <rect x="16" y="30" width="194" height="70" rx="10" fill="#dbeafe" stroke="#1d4ed8" stroke-width="2"/>
+          <text x="113" y="55" text-anchor="middle" font-size="12" font-weight="800" fill="#1e3a8a">1. GL_LEDGERS</text>
+          <text x="113" y="76" text-anchor="middle" font-size="10.5" fill="#334155">JP_CORP_LEDGER (300001)</text>
 
-          <rect x="300" y="30" width="220" height="70" rx="10" fill="#dcfce7" stroke="#16a34a" stroke-width="2"/>
-          <text x="410" y="55" text-anchor="middle" font-size="13" font-weight="800" fill="#14532d">2. 会計方式 (XLA_ACCTG_METHODS_B)</text>
-          <text x="410" y="76" text-anchor="middle" font-size="11" fill="#334155">XX_JP_CORP_AM (COA=101)</text>
+          <rect x="248" y="30" width="268" height="70" rx="10" fill="#dcfce7" stroke="#16a34a" stroke-width="2"/>
+          <text x="382" y="55" text-anchor="middle" font-size="11.2" font-weight="800" fill="#14532d">2. 会計方式 (XLA_ACCTG_METHODS_B)</text>
+          <text x="382" y="76" text-anchor="middle" font-size="10.5" fill="#334155">XX_JP_CORP_AM (COA=101)</text>
 
-          <rect x="600" y="30" width="230" height="70" rx="10" fill="#fef9c3" stroke="#ca8a04" stroke-width="2"/>
-          <text x="715" y="55" text-anchor="middle" font-size="13" font-weight="800" fill="#713f12">3. 方式割当 (XLA_ACCTG_METHOD_RULES)</text>
-          <text x="715" y="76" text-anchor="middle" font-size="11" fill="#334155">AP(200) AR(222) FA(140) LA FAH</text>
+          <rect x="554" y="30" width="286" height="70" rx="10" fill="#fef9c3" stroke="#ca8a04" stroke-width="2"/>
+          <text x="697" y="55" text-anchor="middle" font-size="11.2" font-weight="800" fill="#713f12">3. 方式割当 (XLA_ACCTG_METHOD_RULES)</text>
+          <text x="697" y="76" text-anchor="middle" font-size="10.5" fill="#334155">AP(200) AR(222) FA(140) LA FAH</text>
 
-          <rect x="900" y="30" width="280" height="70" rx="10" fill="#fae8ff" stroke="#9333ea" stroke-width="2.5"/>
-          <text x="1040" y="55" text-anchor="middle" font-size="13" font-weight="800" fill="#581c87">4. JERS (XLA_LINE_DEFINITIONS_B)</text>
-          <text x="1040" y="76" text-anchor="middle" font-size="11" fill="#334155">イベントクラス/タイプ別仕訳ルールセット</text>
+          <rect x="878" y="30" width="304" height="70" rx="10" fill="#fae8ff" stroke="#9333ea" stroke-width="2.5"/>
+          <text x="1030" y="55" text-anchor="middle" font-size="11.5" font-weight="800" fill="#581c87">4. JERS (XLA_LINE_DEFINITIONS_B)</text>
+          <text x="1030" y="76" text-anchor="middle" font-size="10.5" fill="#334155">イベントクラス/タイプ別仕訳ルールセット</text>
 
           <!-- Components Row -->
           <rect x="25" y="165" width="250" height="65" rx="8" fill="#ffffff" stroke="#64748b" stroke-width="1.8"/>
-          <text x="150" y="188" text-anchor="middle" font-size="12" font-weight="800" fill="#0f172a">5a. JLT (XLA_ACCT_LINE_TYPES_B)</text>
-          <text x="150" y="208" text-anchor="middle" font-size="10.5" fill="#475569">貸借・会計クラス・ENTERED_AMOUNT属性</text>
+          <text x="150" y="188" text-anchor="middle" font-size="11.2" font-weight="800" fill="#0f172a">5a. JLT (XLA_ACCT_LINE_TYPES_B)</text>
+          <text x="150" y="208" text-anchor="middle" font-size="10" fill="#475569">貸借・会計クラス・ENTERED_AMOUNT属性</text>
 
           <rect x="305" y="165" width="260" height="65" rx="8" fill="#ffffff" stroke="#64748b" stroke-width="1.8"/>
-          <text x="435" y="188" text-anchor="middle" font-size="12" font-weight="800" fill="#0f172a">5b. ADR (XLA_SEG_RULES_B)</text>
-          <text x="435" y="208" text-anchor="middle" font-size="10.5" fill="#475569">AFF9軸ルール・XLA_CONDITIONS条件分岐</text>
+          <text x="435" y="188" text-anchor="middle" font-size="11.2" font-weight="800" fill="#0f172a">5b. ADR (XLA_SEG_RULES_B)</text>
+          <text x="435" y="208" text-anchor="middle" font-size="10" fill="#475569">AFF9軸ルール・XLA_CONDITIONS条件分岐</text>
 
           <rect x="595" y="165" width="250" height="65" rx="8" fill="#ffffff" stroke="#64748b" stroke-width="1.8"/>
-          <text x="720" y="188" text-anchor="middle" font-size="12" font-weight="800" fill="#0f172a">5c. 摘要 (XLA_DESCRIPTIONS_B)</text>
-          <text x="720" y="208" text-anchor="middle" font-size="10.5" fill="#475569">ヘッダ/明細テキスト動的生成</text>
+          <text x="720" y="188" text-anchor="middle" font-size="11.2" font-weight="800" fill="#0f172a">5c. 摘要 (XLA_DESCRIPTIONS_B)</text>
+          <text x="720" y="208" text-anchor="middle" font-size="10" fill="#475569">ヘッダ/明細テキスト動的生成</text>
 
-          <rect x="880" y="165" width="300" height="65" rx="8" fill="#fff7ed" stroke="#ea580c" stroke-width="2"/>
-          <text x="1030" y="188" text-anchor="middle" font-size="12" font-weight="800" fill="#9a3412">5d. サポート参照 (XLA_ANALYTICAL_*)</text>
-          <text x="1030" y="208" text-anchor="middle" font-size="10.5" fill="#7c2d12">残高有(SR_COUNTERPARTY) & 残高無(SR_EXT_TRACE)</text>
+          <rect x="880" y="165" width="302" height="65" rx="8" fill="#fff7ed" stroke="#ea580c" stroke-width="2"/>
+          <text x="1031" y="188" text-anchor="middle" font-size="11.2" font-weight="800" fill="#9a3412">5d. サポート参照 (XLA_ANALYTICAL_*)</text>
+          <text x="1031" y="208" text-anchor="middle" font-size="9.6" fill="#7c2d12">残高有(SR_COUNTERPARTY) & 残高無(SR_EXT_TRACE)</text>
 
           <!-- Leaves -->
           <rect x="25" y="258" width="250" height="48" rx="7" fill="#fefce8" stroke="#ca8a04" stroke-width="1.5"/>
@@ -489,13 +568,13 @@
               <text x="511" y="78" text-anchor="middle" font-size="9.5" fill="#15803d">Event 500005 (U)</text>
 
               <path d="M 511 90 L 511 138" stroke="#ea580c" stroke-width="2.5" marker-end="url(#f-arr)"/>
-              <rect x="140" y="140" width="446" height="58" rx="8" fill="#fae8ff" stroke="#7e22ce" stroke-width="2"/>
-              <text x="363" y="164" text-anchor="middle" font-size="11.5" font-weight="800" fill="#581c87">Create Accounting (XX_FAH_CLOUD_JERS)</text>
-              <text x="363" y="183" text-anchor="middle" font-size="10" fill="#475569">算式(300×1000=300,000円) · MapSet(SaaS_USAGE→4102) · SR_COUNTERPARTY &amp; SR_EXT_TRACE</text>
+              <rect x="18" y="140" width="568" height="58" rx="8" fill="#fae8ff" stroke="#7e22ce" stroke-width="2"/>
+              <text x="302" y="164" text-anchor="middle" font-size="11.5" font-weight="800" fill="#581c87">Create Accounting (XX_FAH_CLOUD_JERS)</text>
+              <text x="302" y="183" text-anchor="middle" font-size="9.2" fill="#475569">算式(300×1000=300,000円) · MapSet(SaaS_USAGE→4102) · SR_COUNTERPARTY &amp; SR_EXT_TRACE</text>
 
-              <path d="M 363 198 L 363 222" stroke="#ea580c" stroke-width="2.5" marker-end="url(#f-arr)"/>
-              <rect x="140" y="224" width="446" height="44" rx="8" fill="#eff6ff" stroke="#1d4ed8" stroke-width="2"/>
-              <text x="363" y="250" text-anchor="middle" font-size="11" font-weight="800" fill="#1e3a8a">XLA_AE_LINES (売掛金30万/クラウド収益30万) → XLA_AC_BALANCES → GL_BALANCES</text>
+              <path d="M 302 198 L 302 222" stroke="#ea580c" stroke-width="2.5" marker-end="url(#f-arr)"/>
+              <rect x="18" y="224" width="568" height="44" rx="8" fill="#eff6ff" stroke="#1d4ed8" stroke-width="2"/>
+              <text x="302" y="250" text-anchor="middle" font-size="9.8" font-weight="800" fill="#1e3a8a">XLA_AE_LINES (売掛金30万/クラウド収益30万) → XLA_AC_BALANCES → GL_BALANCES</text>
             </svg>
           </div>
         </div>

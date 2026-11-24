@@ -8,11 +8,11 @@
   <style>
     .portal-subnav { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 7px 24px; background: #020617; color: #e2e8f0; border-bottom: 1px solid #334155; font-size: 12px; flex-wrap: wrap; }
     .psnav-pager { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-    .psnav-btn { display: inline-flex; align-items: center; gap: 5px; padding: 4px 11px; border-radius: 6px; background: #1e293b; color: #f8fafc; text-decoration: none; font-weight: 700; border: 1px solid #475569; transition: background 0.15s; }
+    .psnav-btn { display: inline-flex; align-items: center; gap: 5px; padding: 4px 11px; border-radius: 6px; background: #1e293b; color: #f8fafc; text-decoration: none; font-weight: 700; border: 1px solid #475569; white-space: nowrap; transition: background 0.15s; }
     .psnav-btn:hover { background: #2563eb; border-color: #3b82f6; }
     .psnav-home { background: #334155; }
-    .psnav-pos { color: #94a3b8; font-weight: 700; padding: 0 4px; }
-    .psnav-disabled { display: inline-flex; align-items: center; padding: 4px 11px; border-radius: 6px; background: #0f172a; color: #475569; border: 1px solid #1e293b; font-weight: 700; cursor: not-allowed; }
+    .psnav-pos { color: #94a3b8; font-weight: 700; padding: 0 4px; white-space: nowrap; }
+    .psnav-disabled { display: inline-flex; align-items: center; padding: 4px 11px; border-radius: 6px; background: #0f172a; color: #475569; border: 1px solid #1e293b; font-weight: 700; white-space: nowrap; cursor: not-allowed; }
   </style>
 </head>
 <body>
@@ -20,24 +20,23 @@
     <a href="../index.html" class="psnav-btn psnav-home">🏠 メインページへ戻る</a>
     <div class="psnav-pager">
       <a href="../SLA/index.html" class="psnav-btn">◀ 前のページ：SLA・FAH 統合フロー</a>
-      <span class="psnav-pos">5 / 5：SLA / FAH プレゼン資料</span>
-      <span class="psnav-disabled">次のページ ▶</span>
+      <span class="psnav-pos">5 / 8：SLA / FAH プレゼン資料</span>
+      <a href="../DENSAI/index.html" class="psnav-btn">次のページ：電子記録債務・電子記録債権（でんさい） ▶</a>
     </div>
   </nav>
   <!-- プレゼン ヘッダー -->
   <header class="deck-header">
-    <div class="header-brand">
-      <div class="oracle-badge">Oracle Fusion ERP Financials 26D</div>
-      <div>
-        <h1>SLA (補助元帳会計) ＆ FAH 統合アーキテクチャ プレゼンテーション</h1>
-        <p class="header-sub">サブ元帳連携仕訳生成 / AP・AR・FA・LA・FAHセットアップ手順 / サポート参照＆残高管理フロー</p>
-      </div>
+    <div class="header-left header-brand">
+      <div class="brand-badge">Oracle Fusion ERP Financials 26D (OEDMF準拠・6章11スライド)</div>
+      <h1>SLA (補助元帳会計) ＆ FAH 統合アーキテクチャ プレゼンテーション</h1>
+      <p class="header-sub">AFF 9セグメント体系（会社-部門-勘定科目-補助科目-税コード-管理コード-備考1-備考2-備考3）｜ サブ元帳連携仕訳生成 / AP・AR・FA・LA・FAHセットアップ手順 / サポート参照＆残高管理フロー</p>
     </div>
-    <div class="header-tools">
+    <div class="header-tools header-actions">
       <button id="btn-toc-modal" class="btn btn-ghost">📑 目次 (全11スライド)</button>
-      <button id="btn-aff-modal" class="btn btn-ghost">🗂️ AFF 9セグメント</button>
+      <button id="btn-aff-modal" class="btn btn-ghost">🧾 AFF 9セグメント体系</button>
       <button id="btn-fullscreen" class="btn btn-ghost">🖥️ 全画面</button>
-      <a href="./FusionERP_26D_SLA_FAH_Setup_SampleData.xlsx" download class="btn btn-excel">📥 サンプルデータExcel (.xlsx)</a>
+      <a href="./FusionERP_26D_SLA_FAH_Setup_SampleData.xlsx" download class="btn btn-excel">📊 Excelダウンロード (.xlsx)</a>
+      <a href="https://docs.oracle.com/en/cloud/saas/financials/26d/oedmf/index.html" target="_blank" rel="noopener noreferrer" class="btn btn-outline">📖 26D OEDMF公式 ↗</a>
     </div>
   </header>
 

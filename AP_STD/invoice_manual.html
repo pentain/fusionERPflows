@@ -1,0 +1,753 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Oracle Fusion ERP 26D | AP標準請求書作成 操作手順書</title>
+  <style>
+    :root {
+      --bg: #f1f5f9;
+      --card: #ffffff;
+      --ink: #0f172a;
+      --ink-sub: #475569;
+      --border: #cbd5e1;
+      --border-light: #e2e8f0;
+      --oracle-red: #c74634;
+      --blue: #2563eb;
+      --green: #16a34a;
+      --amber: #b45309;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Yu Gothic UI", "Meiryo", sans-serif;
+      background: var(--bg);
+      color: var(--ink);
+      line-height: 1.55;
+    }
+
+    /* ヘッダー */
+    .manual-header {
+      background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+      color: #f8fafc;
+      padding: 16px 28px;
+      border-bottom: 4px solid var(--oracle-red);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+    .badge {
+      display: inline-block;
+      background: var(--oracle-red);
+      color: #fff;
+      font-size: 11px;
+      font-weight: 800;
+      padding: 3px 9px;
+      border-radius: 5px;
+      margin-bottom: 4px;
+    }
+    .manual-header h1 {
+      margin: 0;
+      font-size: 20px;
+      font-weight: 800;
+    }
+    .header-sub {
+      margin: 2px 0 0;
+      font-size: 12px;
+      color: #cbd5e1;
+    }
+    .header-actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 14px;
+      border-radius: 7px;
+      font-size: 12.5px;
+      font-weight: 700;
+      cursor: pointer;
+      border: 1px solid rgba(255,255,255,0.22);
+      background: rgba(255,255,255,0.12);
+      color: #fff;
+      text-decoration: none;
+    }
+    .btn:hover { background: rgba(255,255,255,0.22); }
+    .btn-excel { background: var(--green); border-color: var(--green); }
+    .btn-excel:hover { background: #15803d; }
+    .btn-active { background: var(--blue); border-color: #3b82f6; }
+
+    .container {
+      max-width: 1320px;
+      margin: 0 auto;
+      padding: 20px 24px 48px;
+    }
+
+    /* シナリオサマリカード */
+    .sample-summary {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+      margin-bottom: 18px;
+    }
+    .sum-box {
+      background: var(--card);
+      border: 1px solid var(--border-light);
+      border-top: 4px solid var(--blue);
+      border-radius: 10px;
+      padding: 12px 14px;
+      box-shadow: 0 2px 8px rgba(15,23,42,0.04);
+    }
+    .sum-box.g { border-top-color: var(--green); }
+    .sum-box.a { border-top-color: #ca8a04; }
+    .sum-box.r { border-top-color: var(--oracle-red); }
+    .sum-title { font-size: 11px; font-weight: 700; color: var(--ink-sub); }
+    .sum-val { font-size: 16px; font-weight: 900; color: var(--ink); margin-top: 2px; }
+    .sum-sub { font-size: 11.5px; color: #64748b; margin-top: 3px; }
+
+    /* ステップナビバー */
+    .step-nav-bar {
+      background: var(--card);
+      border: 1px solid var(--border-light);
+      border-radius: 12px;
+      padding: 12px 14px;
+      margin-bottom: 18px;
+      position: sticky;
+      top: 0;
+      z-index: 30;
+      box-shadow: 0 4px 12px rgba(15,23,42,0.06);
+    }
+    .step-pills {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 6px;
+    }
+    .step-pill {
+      padding: 7px 8px;
+      border-radius: 8px;
+      border: 1.5px solid var(--border-light);
+      background: #f8fafc;
+      text-align: left;
+      cursor: pointer;
+      transition: all 0.15s;
+      min-width: 0;
+      overflow: hidden;
+    }
+    .step-pill:hover { border-color: #93c5fd; background: #eff6ff; }
+    .step-pill.active {
+      background: var(--blue);
+      border-color: #1d4ed8;
+      color: #fff;
+    }
+    .step-pill small { display: block; font-size: 10px; font-weight: 800; opacity: 0.85; }
+    .step-pill strong { display: block; font-size: 11.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+    /* 手順カード */
+    .step-card {
+      background: var(--card);
+      border: 1px solid var(--border-light);
+      border-radius: 14px;
+      padding: 20px 22px;
+      margin-bottom: 22px;
+      box-shadow: 0 4px 16px rgba(15,23,42,0.05);
+    }
+    .step-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 2px solid var(--border-light);
+      padding-bottom: 10px;
+      margin-bottom: 14px;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .step-head h2 {
+      margin: 0;
+      font-size: 18px;
+      color: var(--ink);
+    }
+    .nav-path {
+      font-size: 11.5px;
+      font-weight: 700;
+      background: #e0e7ff;
+      color: #1e3a8a;
+      padding: 4px 10px;
+      border-radius: 6px;
+    }
+    .step-lead {
+      margin: 0 0 14px;
+      font-size: 13.5px;
+      color: var(--ink-sub);
+      background: #f8fafc;
+      border-left: 4px solid var(--blue);
+      padding: 9px 14px;
+      border-radius: 4px;
+    }
+
+    /* 画像コンテナ */
+    .shot-frame {
+      position: relative;
+      border: 2px solid var(--border);
+      border-radius: 10px;
+      overflow: hidden;
+      background: #f8fafc;
+      margin-bottom: 16px;
+      cursor: zoom-in;
+    }
+    .shot-frame img {
+      width: 100%;
+      height: auto;
+      display: block;
+    }
+    .zoom-hint {
+      position: absolute;
+      bottom: 10px;
+      right: 12px;
+      background: rgba(15,23,42,0.82);
+      color: #fff;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 4px 10px;
+      border-radius: 999px;
+      pointer-events: none;
+    }
+
+    /* 手順テーブル */
+    table.manual-tbl {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12.5px;
+    }
+    table.manual-tbl th {
+      background: #1e293b;
+      color: #fff;
+      padding: 8px 10px;
+      text-align: left;
+      border: 1px solid #334155;
+      white-space: nowrap;
+    }
+    table.manual-tbl td {
+      padding: 8px 10px;
+      border: 1px solid var(--border-light);
+      vertical-align: top;
+    }
+    .num-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: #dc2626;
+      color: #fff;
+      font-weight: 800;
+      font-size: 12px;
+    }
+    .num-badge.blue { background: #2563eb; }
+    .num-badge.green { background: #16a34a; }
+    .num-badge.purple { background: #7e22ce; }
+    .req-tag {
+      display: inline-block;
+      padding: 2px 7px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 800;
+    }
+    .req-must { background: #fee2e2; color: #991b1b; }
+    .req-auto { background: #dbeafe; color: #1e40af; }
+    .req-opt { background: #f1f5f9; color: #475569; }
+    .val-code {
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      background: #dcfce7;
+      color: #14532d;
+      padding: 2px 7px;
+      border-radius: 4px;
+      font-weight: 800;
+      font-size: 12px;
+      display: inline-block;
+    }
+    .db-code {
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 11px;
+      color: #334155;
+      background: #f1f5f9;
+      padding: 2px 6px;
+      border-radius: 4px;
+    }
+
+    .pager-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 16px;
+      padding-top: 12px;
+      border-top: 1px solid var(--border-light);
+    }
+    .pager-btn {
+      padding: 8px 16px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: #f8fafc;
+      font-weight: 700;
+      font-size: 13px;
+      cursor: pointer;
+    }
+    .pager-btn:hover:not(:disabled) { background: #e2e8f0; }
+    .pager-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+    .pager-btn.primary { background: var(--blue); border-color: var(--blue); color: #fff; }
+
+    /* 参考セクション */
+    .ref-section {
+      background: var(--card);
+      border: 1px solid var(--border-light);
+      border-radius: 14px;
+      padding: 20px 22px;
+      margin-top: 24px;
+      box-shadow: 0 2px 10px rgba(15,23,42,0.04);
+    }
+    .ref-tabs {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 14px;
+      border-bottom: 2px solid var(--border-light);
+      padding-bottom: 10px;
+    }
+    .ref-tab {
+      padding: 7px 14px;
+      border-radius: 7px;
+      border: 1px solid var(--border);
+      background: #f8fafc;
+      font-size: 12.5px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .ref-tab.active { background: #0f172a; color: #fff; border-color: #0f172a; }
+
+    /* 拡大モーダル */
+    .zoom-modal {
+      position: fixed;
+      inset: 0;
+      background: rgba(15,23,42,0.85);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 100;
+      padding: 20px;
+    }
+    .zoom-modal.hidden { display: none; }
+    .zoom-box {
+      max-width: 96vw;
+      max-height: 92vh;
+      background: #fff;
+      border-radius: 10px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+    .zoom-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 16px;
+      background: #0f172a;
+      color: #fff;
+      font-weight: 700;
+      font-size: 13px;
+    }
+    .zoom-close {
+      background: transparent;
+      border: none;
+      color: #fff;
+      font-size: 18px;
+      cursor: pointer;
+    }
+    .zoom-box img {
+      max-width: 100%;
+      max-height: calc(92vh - 46px);
+      object-fit: contain;
+    }
+
+    @media print {
+      .step-nav-bar, .header-actions, .pager-row, .zoom-hint { display: none !important; }
+      .step-card { break-inside: avoid; box-shadow: none; border: 1px solid #94a3b8; }
+    }
+    @media (max-width: 1000px) {
+      .sample-summary { grid-template-columns: repeat(2, 1fr); }
+      .step-pills { grid-template-columns: repeat(3, 1fr); }
+    }
+  </style>
+</head>
+<body>
+  <header class="manual-header">
+    <div>
+      <span class="badge">Oracle Fusion Cloud ERP 26D — 業務操作手順書</span>
+      <h1>AP標準請求書作成 操作手順書（画面イメージ付きガイド）</h1>
+      <p class="header-sub">サンプル入力値: ビジネス・ユニット <code>JP_BU_401</code> ／ サプライヤ <code>(株)テックパートナーズ (SUP-1001)</code> ／ 請求書 <code>AP-INV-2026-0001</code></p>
+    </div>
+    <div class="header-actions">
+      <button id="btn-mode-step" class="btn btn-active" type="button">📖 ステップ別表示</button>
+      <button id="btn-mode-all" class="btn" type="button">📜 全手順一括表示（印刷向け）</button>
+      <button id="btn-print" class="btn" type="button">🖨️ 印刷 / PDF</button>
+      <a href="./FusionERP_26D_AP_Invoice_Creation_Manual.xlsx" download class="btn btn-excel">📥 Excel手順書 (.xlsx)</a>
+    </div>
+  </header>
+
+  <main class="container">
+    <!-- サンプル請求書サマリ -->
+    <section class="sample-summary">
+      <div class="sum-box">
+        <div class="sum-title">基本・取引先サンプル</div>
+        <div class="sum-val">JP_BU_401 / SUP-1001</div>
+        <div class="sum-sub">(株)テックパートナーズ / サイト: TOKYO-PAY / 法的実体: フュージョン(株)</div>
+      </div>
+      <div class="sum-box g">
+        <div class="sum-title">明細入力サンプル（税抜各100万）</div>
+        <div class="sum-val">品目合計 2,000,000円</div>
+        <div class="sum-sub">明細1: 設計報酬(税10%) 100万 ／ 明細2: 資料制作(軽減8%) 100万</div>
+      </div>
+      <div class="sum-box a">
+        <div class="sum-title">消費税・段階源泉徴収税</div>
+        <div class="sum-val">税 +18万 / 源泉 -306,300円</div>
+        <div class="sum-sub">消費税計 180,000円 ／ 源泉 100万以下 10.21%(102,100) + 超 20.42%(204,200)</div>
+      </div>
+      <div class="sum-box r">
+        <div class="sum-title">請求総額 ＆ 振込予定額</div>
+        <div class="sum-val">計 2,180,000 / 未払 1,873,700</div>
+        <div class="sum-sub">ヘッダ金額＝税込218万円（源泉引後 実支払額 1,873,700円）</div>
+      </div>
+    </section>
+
+    <!-- ステップ選択バー -->
+    <nav class="step-nav-bar" id="step-nav-bar">
+      <div class="step-pills" id="step-pills"></div>
+    </nav>
+
+    <!-- 手順本体コンテナ -->
+    <div id="steps-container"></div>
+
+    <!-- 下段リファレンス（全項目一覧 ＆ 検証後仕訳） -->
+    <section class="ref-section">
+      <div class="ref-tabs">
+        <button type="button" class="ref-tab active" data-ref="fields">📋 全画面項目・OEDMF 26D カラム対応一覧</button>
+        <button type="button" class="ref-tab" data-ref="journal">📒 手順完了後（検証・会計計上済）のAP明細＆SLA仕訳検証</button>
+      </div>
+      <div id="ref-body"></div>
+    </section>
+  </main>
+
+  <!-- 画像拡大モーダル -->
+  <div id="zoom-modal" class="zoom-modal hidden">
+    <div class="zoom-box">
+      <div class="zoom-top">
+        <span id="zoom-caption">画面イメージ拡大</span>
+        <button type="button" id="zoom-close" class="zoom-close">✕</button>
+      </div>
+      <img id="zoom-img" src="" alt="拡大画像" />
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      const STEPS = [
+        {
+          id: 'step0',
+          short: '全体構成',
+          title: 'Step 0: 請求書作成画面の全体構成',
+          nav: 'ナビゲーション：買掛管理 ＞ 請求書 ＞ タスク：請求書の作成',
+          lead: 'Oracle Fusion ERP の標準請求書作成画面は A〜E の5つの主要エリアで構成されています。入力は原則として「ヘッダー左 → 中 → 右 → 明細 → 保存・検証・会計計上」の順に進めます。',
+          img: './manual_images/step0_overview.png',
+          rows: [
+            { badge: 'A', color: 'blue', item: 'アクション＆処理メニュー', req: '操作', val: '保存 / 請求書処理▼ / 保存して閉じる', note: '作成中の保存、検証（税・源泉計算）、会計計上（SLA仕訳生成）を実行します。', db: 'AP_INVOICES_ALL ステータス制御' },
+            { badge: 'B', color: '', item: '請求書ヘッダー領域', req: '必須', val: 'BU・サプライヤ・番号・税込金額・条件', note: 'ビジネスユニット、取引先、請求書番号、コントロール税込総額、日付等を設定します。', db: 'AP_INVOICES_ALL' },
+            { badge: 'C', color: 'green', item: '明細セクション（配分等6タブ）', req: '必須', val: '品目明細1・2（各 1,000,000円）', note: '品目・費用配賦CCID・会計日・摘要・税分類コードを行単位に登録します。', db: 'AP_INVOICE_LINES_ALL' },
+            { badge: 'D', color: 'purple', item: '税金セクション（折りたたみ）', req: '自動', val: '検証時に消費税・源泉明細を生成', note: '▶をクリックして展開すると、明細ごとの消費税および源泉徴収税内訳を確認できます。', db: 'ZX_LINES / AP_INVOICE_LINES_ALL' },
+            { badge: 'E', color: '', item: '合計サマリバー', req: '確認', val: '品目＋税金＝合計 2,180,000円', note: 'ヘッダ金額と合計が一致しない場合は合計数値横に黄色い警告マーク(△)が表示されます。', db: 'AP_PAYMENT_SCHEDULES_ALL' }
+          ]
+        },
+        {
+          id: 'step1',
+          short: '取引先・BU',
+          title: 'Step 1: 請求書ヘッダー（左列）— ビジネスユニット・サプライヤ・サイト選択',
+          nav: 'エリア：請求書ヘッダー（左側列）',
+          lead: '最初にビジネス・ユニットとサプライヤを選択します。サプライヤとサイトを指定すると、サプライヤ番号・法的エンティティ・負債勘定・源泉グループなどの既定値がマスタから自動連携されます。',
+          img: './manual_images/step1_header_vendor.png',
+          rows: [
+            { badge: '1', color: '', item: '* ビジネス・ユニット', req: '必須', val: 'JP_BU_401', note: '自社で請求・支払管理を行う事業単位を選択します（任意で上に「識別購買オーダー」を指定可能、今回はPOなし）。', db: 'AP_INVOICES_ALL.ORG_ID (401)' },
+            { badge: '2', color: '', item: '* サプライヤ', req: '必須', val: '(株)テックパートナーズ', note: '虫眼鏡ボタンから取引先を検索選択すると、「サプライヤ番号：SUP-1001」が自動表示されます。', db: 'AP_INVOICES_ALL.VENDOR_ID (3001)' },
+            { badge: '3', color: '', item: '* サプライヤ・サイト', req: '必須', val: 'TOKYO-PAY', note: '支払対象サイトを選択します。直下に「法的エンティティ：フュージョン(株)」が自動表示され、買掛金CCIDや源泉税グループも継承されます。', db: 'AP_INVOICES_ALL.VENDOR_SITE_ID (3101)' },
+            { badge: '4', color: 'blue', item: '請求書グループ', req: '任意', val: '202611_月次外注', note: '同じグループ単位で一括検証や支払対象抽出を行いたい場合に識別名を入力します。', db: 'AP_INVOICES_ALL.BATCH_ID' }
+          ]
+        },
+        {
+          id: 'step2',
+          short: '番号・金額',
+          title: 'Step 2: 請求書ヘッダー（中央列）— 請求書番号・税込金額・タイプ入力',
+          nav: 'エリア：請求書ヘッダー（中央列）',
+          lead: '受領した請求書の固有番号と税込総額を入力します。ヘッダの「* 金額」には源泉徴収税を差し引く前の「税抜合計＋消費税合計（2,180,000円）」を入力する点に注意してください。',
+          img: './manual_images/step2_header_amount.png',
+          rows: [
+            { badge: '1', color: '', item: '* 番号', req: '必須', val: 'AP-INV-2026-0001', note: 'サプライヤから発行された請求書番号を入力します（同一サプライヤ内での重複登録はエラーチェックされます）。', db: 'AP_INVOICES_ALL.INVOICE_NUM' },
+            { badge: '2', color: '', item: '* 金額（通貨・金額）', req: '必須', val: 'JPY / 2,180,000', note: '税抜2,000,000円＋消費税180,000円のコントロール合計を入力します（源泉控除前の金額）。', db: 'INVOICE_CURRENCY_CODE / INVOICE_AMOUNT' },
+            { badge: '3', color: 'blue', item: '* タイプ', req: '必須', val: '標準', note: '通常の請求書計上のため「標準 (STANDARD)」を指定します（前払時は「前払金」、赤伝時は「クレジット・メモ」）。', db: 'INVOICE_TYPE_LOOKUP_CODE' },
+            { badge: '4', color: 'green', item: '摘要', req: '任意', val: '基幹刷新システム 設計・資料委託', note: '承認画面や請求書検索画面で確認しやすい業務概要を入力します。', db: 'AP_INVOICES_ALL.DESCRIPTION' }
+          ]
+        },
+        {
+          id: 'step3',
+          short: '日付・条件',
+          title: 'Step 3: 請求書ヘッダー（右列）— 日付・支払条件・起算日・添付登録',
+          nav: 'エリア：請求書ヘッダー（右側列）',
+          lead: '請求日付と支払条件・起算日を設定して支払期日 (DUE_DATE) の基準を確定します。必要に応じて依頼人指定や請求書PDFの添付を行います。',
+          img: './manual_images/step3_header_terms.png',
+          rows: [
+            { badge: '1', color: '', item: '* 日付', req: '必須', val: '2026-11-16', note: '請求書の発行日付を入力します。', db: 'AP_INVOICES_ALL.INVOICE_DATE' },
+            { badge: '2', color: '', item: '* 支払条件', req: '必須', val: '当月10日締め当月末', note: 'サイト既定の支払条件がセットされます。契約条件により異なる場合はリストから変更します。', db: 'AP_INVOICES_ALL.TERMS_ID' },
+            { badge: '3', color: 'blue', item: '* 支払起算日', req: '必須', val: '2026-11-16', note: '支払条件の締め日・期日計算のスタート日となる起算日を確認します。', db: 'AP_INVOICES_ALL.TERMS_DATE' },
+            { badge: '4', color: 'green', item: '依頼人 / 添付 (+) / ノート', req: '任意', val: '山田 太郎 / INV_202611.pdf', note: '社内承認者（依頼人）や、証憑となる請求書PDFファイルを添付「+」ボタンから登録します。', db: 'REQUESTER_ID / FND_ATTACHED_DOCUMENTS' }
+          ]
+        },
+        {
+          id: 'step4',
+          short: '明細入力',
+          title: 'Step 4: 明細入力 — 明細1 (税10%) ＆ 明細2 (軽減税8%) の入力',
+          nav: 'エリア：明細セクション（配分・参照・税金エリア）',
+          lead: '請求書明細テーブルへ税率の異なる2つの品目行を入力します。AFF 9セグメント体系の配分組合せ（費用CCID）と税分類コードを指定します。',
+          img: './manual_images/step4_lines_input.png',
+          rows: [
+            { badge: '1', color: 'blue', item: '行追加 ( + ) ボタン', req: '操作', val: '明細2を追加', note: '初期状態の1行目に加え、テーブルツールバーの「+」を押下して2行目（明細2）を作成します。', db: 'AP_INVOICE_LINES_ALL (LINE 1, 2)' },
+            { badge: '2', color: '', item: '* タイプ / * 金額 / 配分組合せ / 会計日', req: '必須', val: '明細1: 1,000,000 (01-2100-5210-100-V10...)\n明細2: 1,000,000 (01-2100-5210-200-V08...)', note: 'タイプ=「品目」、金額は税抜を入力。配分組合せにAFF 9セグメント(CCID 5001 / 5002)、会計日にオープン期間内の日付(2026-11-16)を指定します。', db: 'AMOUNT / DEFAULT_DIST_CCID / ACCOUNTING_DATE' },
+            { badge: '3', color: '', item: '摘要 ＆ 税分類コード', req: '必須', val: '明細1: システム設計委託 / JP_TAX_10\n明細2: 技術資料制作 / JP_TAX_8_RED', note: '各行の摘要を入力し、明細1に標準消費税10%（JP_TAX_10）、明細2に軽減税率8%（JP_TAX_8_RED）を選択します。', db: 'DESCRIPTION / TAX_CLASSIFICATION_CODE' }
+          ]
+        },
+        {
+          id: 'step5',
+          short: '税＆合計確認',
+          title: 'Step 5: 税金計算（消費税・源泉徴収税）＆ 合計サマリ一致確認',
+          nav: 'エリア：税金セクション ＆ 合計サマリバー',
+          lead: '検証を実行すると消費税（10%/8%）と段階源泉徴収税（100万以下10.21%／100万超20.42%）が自動生成され、最下部サマリに集計されます。',
+          img: './manual_images/step5_tax_totals.png',
+          rows: [
+            { badge: '1', color: 'purple', item: '「税金」セクション展開確認', req: '自動', val: '税明細2行・源泉明細2行生成', note: '▶をクリックして展開すると、明細1(10万)・明細2(8万)の税率・税額が正しく計算されていることを確認できます。', db: 'ZX_LINES / AP_INVOICE_LINES_ALL (TAX, AWT)' },
+            { badge: '2', color: '', item: '税金 ＆ 源泉徴収 合計', req: '自動', val: '税金 180,000 / 源泉 -306,300', note: '100万円以下分(10.21%)=102,100円 ＋ 100万円超分(20.42%)=204,200円 の計 306,300円が源泉控除されていることを確認します。', db: 'TOTAL_TAX_AMOUNT / AWT_FLAG = "A"' },
+            { badge: '3', color: 'green', item: '合計 ＆ 未払額の一致確認', req: '必須確認', val: '合計 2,180,000 / 未払 1,873,700', note: '合計(2,180,000)がヘッダ金額と一致し警告アイコン(!)が消えたこと、および実際の振込予定額（未払額 1,873,700円）が正しいことを確認します。', db: 'AP_PAYMENT_SCHEDULES_ALL.AMOUNT_REMAINING' }
+          ]
+        },
+        {
+          id: 'step6',
+          short: '保存・検証・計上',
+          title: 'Step 6: 保存 → 検証 (Validate) → 会計計上 (Post to Ledger)',
+          nav: 'エリア：右上グローバルアクションバー',
+          lead: 'すべての入力が完了したら、保存 → 検証 → 会計計上を実行してSLA仕訳（XLA_AE_LINES）を生成し、「保存して閉じる(S)」で作業完了です。',
+          img: './manual_images/step6_actions_validate.png',
+          rows: [
+            { badge: '1', color: 'blue', item: '「保存」ボタン', req: '操作', val: '請求書データ確定保存', note: 'まず右上の「保存」をクリックし、ヘッダおよび明細入力値をDBへ保存します（APPROVAL_STATUS = NEVER VALIDATED）。', db: 'AP_INVOICES_ALL / LINES_ALL INSERT' },
+            { badge: '2', color: '', item: '「請求書処理▼」メニュー', req: '操作', val: '①「検証」 → ②「会計計上」', note: '①「検証」をクリックすると税・源泉が計算されステータスが「検証済 (APPROVED)」になります。続けて②「会計計上 (Post to Ledger)」を実行すると即時SLA仕訳が作成されます。', db: 'APPROVAL_STATUS="APPROVED" → XLA_AE_LINES' },
+            { badge: '3', color: 'green', item: '「保存して閉じる (S)」', req: '操作', val: '作成画面終了', note: '「検証済・会計計上済」を確認した後、「保存して閉じる(S)」をクリックして請求書管理画面へ戻ります。', db: 'セッション完了' }
+          ]
+        }
+      ];
+
+      const ALL_FIELDS = [
+        ['ヘッダー(左)', '識別購買オーダー', '任意', '(空欄)', 'AP_INVOICES_ALL.PO_HEADER_ID'],
+        ['ヘッダー(左)', '* ビジネス・ユニット', '必須', 'JP_BU_401', 'AP_INVOICES_ALL.ORG_ID (401)'],
+        ['ヘッダー(左)', '* サプライヤ', '必須', '(株)テックパートナーズ', 'AP_INVOICES_ALL.VENDOR_ID (3001)'],
+        ['ヘッダー(左)', 'サプライヤ番号', '自動', 'SUP-1001', 'POZ_SUPPLIERS.SEGMENT1'],
+        ['ヘッダー(左)', '* サプライヤ・サイト', '必須', 'TOKYO-PAY', 'AP_INVOICES_ALL.VENDOR_SITE_ID (3101)'],
+        ['ヘッダー(左)', '法的エンティティ', '自動', 'フュージョン(株)', 'AP_INVOICES_ALL.LEGAL_ENTITY_ID (201)'],
+        ['ヘッダー(左)', '請求書グループ', '任意', '202611_月次外注', 'AP_INVOICES_ALL.BATCH_ID'],
+        ['ヘッダー(中)', '* 番号', '必須', 'AP-INV-2026-0001', 'AP_INVOICES_ALL.INVOICE_NUM'],
+        ['ヘッダー(中)', '* 金額 (通貨/額)', '必須', 'JPY / 2,180,000', 'INVOICE_CURRENCY_CODE / INVOICE_AMOUNT'],
+        ['ヘッダー(中)', '* タイプ', '必須', '標準 (STANDARD)', 'INVOICE_TYPE_LOOKUP_CODE'],
+        ['ヘッダー(中)', '摘要', '任意', '基幹刷新システム設計・資料委託', 'AP_INVOICES_ALL.DESCRIPTION'],
+        ['ヘッダー(右)', '* 日付', '必須', '2026-11-16', 'AP_INVOICES_ALL.INVOICE_DATE'],
+        ['ヘッダー(右)', '* 支払条件', '必須', '当月10日締め当月末', 'AP_INVOICES_ALL.TERMS_ID'],
+        ['ヘッダー(右)', '* 支払起算日', '必須', '2026-11-16', 'AP_INVOICES_ALL.TERMS_DATE'],
+        ['ヘッダー(右)', '依頼人 / 添付', '任意', '山田 太郎 / INV_202611.pdf', 'REQUESTER_ID / FND_ATTACHED_DOCUMENTS'],
+        ['明細(1, 2)', '* タイプ / * 金額', '必須', '品目 / 各 1,000,000', 'LINE_TYPE_LOOKUP_CODE / AMOUNT'],
+        ['明細(1, 2)', '配分組合せ (AFF9軸)', '必須', '01-2100-5210-100-V10... / -200-V08...', 'DEFAULT_DIST_CCID (5001 / 5002)'],
+        ['明細(1, 2)', '会計日 / 税分類', '必須', '2026-11-16 / JP_TAX_10, JP_TAX_8_RED', 'ACCOUNTING_DATE / TAX_CLASSIFICATION_CODE'],
+        ['合計欄', '合計 / 未払額', '自動', '2,180,000 / 1,873,700', 'INVOICE_AMOUNT / AMOUNT_REMAINING']
+      ];
+
+      let mode = 'step'; // 'step' | 'all'
+      let currentIdx = 0;
+      let refTab = 'fields';
+
+      function esc(s) {
+        return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+      }
+
+      function renderStepPills() {
+        const navBar = document.getElementById('step-nav-bar');
+        const pillsEl = document.getElementById('step-pills');
+        navBar.style.display = mode === 'step' ? 'block' : 'none';
+        pillsEl.innerHTML = '';
+        STEPS.forEach((st, idx) => {
+          const b = document.createElement('button');
+          b.type = 'button';
+          b.className = 'step-pill' + (idx === currentIdx ? ' active' : '');
+          b.innerHTML = `<small>Step ${idx}</small><strong>${esc(st.short)}</strong>`;
+          b.addEventListener('click', () => {
+            currentIdx = idx;
+            renderSteps();
+          });
+          pillsEl.appendChild(b);
+        });
+      }
+
+      function buildStepHtml(st, idx, showPager) {
+        const rowsHtml = st.rows.map(r => {
+          const bCls = r.color ? `num-badge ${r.color}` : 'num-badge';
+          const reqCls = r.req.includes('必須') ? 'req-must' : (r.req.includes('自動') ? 'req-auto' : 'req-opt');
+          return `
+            <tr>
+              <td style="text-align:center;"><span class="${bCls}">${esc(r.badge)}</span></td>
+              <td><strong>${esc(r.item)}</strong></td>
+              <td style="text-align:center;"><span class="req-tag ${reqCls}">${esc(r.req)}</span></td>
+              <td><span class="val-code">${esc(r.val).replace(/\n/g,'<br>')}</span></td>
+              <td>${esc(r.note)}</td>
+              <td><span class="db-code">${esc(r.db)}</span></td>
+            </tr>
+          `;
+        }).join('');
+
+        const pagerHtml = showPager ? `
+          <div class="pager-row">
+            <button type="button" class="pager-btn" data-nav="prev" ${idx === 0 ? 'disabled' : ''}>◀ 前のステップへ</button>
+            <span style="font-size:12.5px;font-weight:700;color:#475569;">Step ${idx} / ${STEPS.length - 1}</span>
+            <button type="button" class="pager-btn primary" data-nav="next" ${idx === STEPS.length - 1 ? 'disabled' : ''}>次のステップへ ▶</button>
+          </div>
+        ` : '';
+
+        return `
+          <section class="step-card">
+            <div class="step-head">
+              <h2>${esc(st.title)}</h2>
+              <span class="nav-path">${esc(st.nav)}</span>
+            </div>
+            <p class="step-lead">${esc(st.lead)}</p>
+            <div class="shot-frame" data-zoom-src="${esc(st.img)}" data-zoom-cap="${esc(st.title)}">
+              <img src="${esc(st.img)}" alt="${esc(st.title)}" />
+              <span class="zoom-hint">🔍 クリックで画面イメージ拡大</span>
+            </div>
+            <table class="manual-tbl">
+              <thead>
+                <tr>
+                  <th style="width:52px;text-align:center;">番号</th>
+                  <th style="width:20%;">画面項目名 / 操作</th>
+                  <th style="width:74px;text-align:center;">区分</th>
+                  <th style="width:23%;">サンプル入力値 / 結果</th>
+                  <th>手順・確認ポイント</th>
+                  <th style="width:19%;">OEDMF 26D テーブル</th>
+                </tr>
+              </thead>
+              <tbody>${rowsHtml}</tbody>
+            </table>
+            ${pagerHtml}
+          </section>
+        `;
+      }
+
+      function renderSteps() {
+        renderStepPills();
+        const container = document.getElementById('steps-container');
+        if (mode === 'step') {
+          container.innerHTML = buildStepHtml(STEPS[currentIdx], currentIdx, true);
+        } else {
+          container.innerHTML = STEPS.map((st, idx) => buildStepHtml(st, idx, false)).join('');
+        }
+
+        container.querySelectorAll('[data-nav]').forEach(btn => {
+          btn.addEventListener('click', () => {
+            if (btn.getAttribute('data-nav') === 'prev' && currentIdx > 0) currentIdx--;
+            if (btn.getAttribute('data-nav') === 'next' && currentIdx < STEPS.length - 1) currentIdx++;
+            renderSteps();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          });
+        });
+
+        container.querySelectorAll('[data-zoom-src]').forEach(frame => {
+          frame.addEventListener('click', () => {
+            document.getElementById('zoom-img').src = frame.getAttribute('data-zoom-src');
+            document.getElementById('zoom-caption').textContent = frame.getAttribute('data-zoom-cap');
+            document.getElementById('zoom-modal').classList.remove('hidden');
+          });
+        });
+      }
+
+      function renderRef() {
+        const body = document.getElementById('ref-body');
+        if (refTab === 'fields') {
+          body.innerHTML = `
+            <table class="manual-tbl">
+              <thead><tr><th>エリア</th><th>画面項目名</th><th>区分</th><th>サンプル設定値</th><th>OEDMF 26D カラム</th></tr></thead>
+              <tbody>
+                ${ALL_FIELDS.map(f => `
+                  <tr>
+                    <td><strong>${esc(f[0])}</strong></td>
+                    <td><strong>${esc(f[1])}</strong></td>
+                    <td><span class="req-tag ${f[2]==='必須'?'req-must':(f[2]==='自動'?'req-auto':'req-opt')}">${esc(f[2])}</span></td>
+                    <td><span class="val-code">${esc(f[3])}</span></td>
+                    <td><span class="db-code">${esc(f[4])}</span></td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          `;
+        } else {
+          body.innerHTML = `
+            <p style="margin:0 0 10px;font-size:13px;color:#334155;">Step 6 で「検証」→「会計計上」を実行すると、AP明細6行およびSLA仕訳（<code>XLA_AE_LINES</code> 7行・貸借各 <strong>2,180,000円</strong>）が生成されます。</p>
+            <table class="manual-tbl">
+              <thead><tr><th>行</th><th>会計クラス</th><th>CCID</th><th>AFF 9セグメント組合せ</th><th>摘要</th><th style="text-align:right;">借方 (DR)</th><th style="text-align:right;">貸方 (CR)</th></tr></thead>
+              <tbody>
+                <tr><td>1</td><td>ITEM EXPENSE</td><td>5001</td><td class="db-code">01-2100-5210-100-V10-PJ002-0000-0000-0000</td><td>外注費 (明細1: 設計委託)</td><td style="text-align:right;">1,000,000</td><td style="text-align:right;">0</td></tr>
+                <tr><td>2</td><td>ITEM EXPENSE</td><td>5002</td><td class="db-code">01-2100-5210-200-V08-PJ002-0000-0000-0000</td><td>外注費 (明細2: 資料制作)</td><td style="text-align:right;">1,000,000</td><td style="text-align:right;">0</td></tr>
+                <tr><td>3</td><td>TAX</td><td>1501</td><td class="db-code">01-0000-1350-010-V10-00000-0000-0000-0000</td><td>仮払消費税 (標準10%)</td><td style="text-align:right;">100,000</td><td style="text-align:right;">0</td></tr>
+                <tr><td>4</td><td>TAX</td><td>1502</td><td class="db-code">01-0000-1350-008-V08-00000-0000-0000-0000</td><td>仮払消費税 (軽減8%)</td><td style="text-align:right;">80,000</td><td style="text-align:right;">0</td></tr>
+                <tr><td>5</td><td>LIABILITY</td><td>2101</td><td class="db-code">01-2100-2110-000-00-PJ002-0000-0000-0000</td><td>買掛金 (源泉控除後振込予定額)</td><td style="text-align:right;">0</td><td style="text-align:right;"><strong>1,873,700</strong></td></tr>
+                <tr><td>6</td><td>AWT</td><td>2201</td><td class="db-code">01-9000-2160-101-W10-00000-0000-0000-0000</td><td>預り金・源泉所得税 (100万以下 10.21%)</td><td style="text-align:right;">0</td><td style="text-align:right;">102,100</td></tr>
+                <tr><td>7</td><td>AWT</td><td>2202</td><td class="db-code">01-9000-2160-204-W20-00000-0000-0000-0000</td><td>預り金・源泉所得税 (100万超 20.42%)</td><td style="text-align:right;">0</td><td style="text-align:right;">204,200</td></tr>
+                <tr style="background:#fef9c3;font-weight:800;"><td colspan="5">貸借合計（税込総額 2,180,000円 一致）</td><td style="text-align:right;">2,180,000</td><td style="text-align:right;">2,180,000</td></tr>
+              </tbody>
+            </table>
+          `;
+        }
+      }
+
+      document.getElementById('btn-mode-step').addEventListener('click', () => {
+        mode = 'step';
+        document.getElementById('btn-mode-step').classList.add('btn-active');
+        document.getElementById('btn-mode-all').classList.remove('btn-active');
+        renderSteps();
+      });
+      document.getElementById('btn-mode-all').addEventListener('click', () => {
+        mode = 'all';
+        document.getElementById('btn-mode-all').classList.add('btn-active');
+        document.getElementById('btn-mode-step').classList.remove('btn-active');
+        renderSteps();
+      });
+      document.getElementById('btn-print').addEventListener('click', () => window.print());
+      document.getElementById('zoom-close').addEventListener('click', () => document.getElementById('zoom-modal').classList.add('hidden'));
+      document.getElementById('zoom-modal').addEventListener('click', e => {
+        if (e.target.id === 'zoom-modal') document.getElementById('zoom-modal').classList.add('hidden');
+      });
+      document.querySelectorAll('.ref-tab').forEach(t => {
+        t.addEventListener('click', () => {
+          document.querySelectorAll('.ref-tab').forEach(x => x.classList.remove('active'));
+          t.classList.add('active');
+          refTab = t.getAttribute('data-ref');
+          renderRef();
+        });
+      });
+
+      renderSteps();
+      renderRef();
+    })();
+  </script>
+</body>
+</html>

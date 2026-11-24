@@ -66,8 +66,9 @@
 
     .portal-header h1 {
       margin: 0;
-      font-size: 24px;
+      font-size: clamp(19px, 2vw, 24px);
       font-weight: 800;
+      line-height: 1.3;
       letter-spacing: 0.2px;
     }
 
@@ -235,17 +236,33 @@
     .bg-ap-pre { background: #b45309; }
     .bg-sla { background: #7e22ce; }
     .bg-fah { background: #be123c; }
+    .bg-densai { background: #0e7490; }
+    .bg-fa { background: #0d9488; }
+    .bg-la { background: #6d28d9; }
+
+    .card-meta-tag {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--text-sub);
+      background: #f1f5f9;
+      border: 1px solid var(--border-light);
+      padding: 2px 8px;
+      border-radius: 999px;
+      white-space: nowrap;
+    }
 
     .card-top h3 {
       margin: 0;
-      font-size: 16.5px;
+      font-size: 16px;
+      line-height: 1.35;
       font-weight: 800;
       color: var(--text-main);
     }
 
     .card-flow-sub {
       margin: 4px 0 0;
-      font-size: 12.5px;
+      font-size: 12px;
+      line-height: 1.45;
       font-weight: 700;
       color: var(--primary);
     }
@@ -262,6 +279,39 @@
       margin: 0;
       font-size: 13px;
       color: var(--text-sub);
+    }
+    .card-desc code {
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      background: #f1f5f9;
+      padding: 1px 5px;
+      border-radius: 4px;
+      font-size: 11px;
+      color: #0f172a;
+    }
+
+    .case-shortcuts {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      margin-top: auto;
+      padding-top: 2px;
+    }
+    .case-chip {
+      display: inline-flex;
+      align-items: center;
+      padding: 4px 9px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 700;
+      text-decoration: none;
+      color: #1e3a8a;
+      background: #eff6ff;
+      border: 1px solid #bfdbfe;
+      transition: all 0.15s;
+    }
+    .case-chip:hover {
+      background: #dbeafe;
+      border-color: #60a5fa;
     }
 
     .highlights {
@@ -370,7 +420,7 @@
     <div class="header-brand">
       <span class="oracle-badge">Oracle Fusion Cloud ERP Financials 26D (OEDMF準拠)</span>
       <h1>Fusion ERP Finanacialsデータフロー</h1>
-      <p class="header-sub">サブ元帳（AR / AP / AP前払 / SLA / FAH）から会計作成・GL転記・残高管理までのフローチャート＆関連資料ポータル</p>
+      <p class="header-sub">サブ元帳（AP / AP前払 / AR / SLA / FAH / 電子記録債務・債権 / FA / LA）から会計作成・GL転記・残高管理までのフローチャート＆関連資料ポータル</p>
     </div>
     <div class="header-links">
       <a href="https://docs.oracle.com/en/cloud/saas/financials/26d/oedmf/index.html" target="_blank" rel="noopener noreferrer" class="btn-header">
@@ -383,9 +433,9 @@
     <!-- サマリKPI -->
     <section class="summary-strip" aria-label="プロジェクト概要">
       <div class="stat-card">
-        <div class="stat-val">5コンテンツ</div>
+        <div class="stat-val">8コンテンツ</div>
         <div class="stat-lbl">公開フロー・資料フォルダ</div>
-        <div class="stat-desc">AP_STD / AP_PREPAY / AR / SLA / FAH の全ページとExcelデータを集約</div>
+        <div class="stat-desc">AP_STD / AP_PREPAY / AR / SLA / FAH / DENSAI / FA / LA の全ページとExcelデータを集約</div>
       </div>
       <div class="stat-card c-green">
         <div class="stat-val">AFF 9セグメント</div>
@@ -408,10 +458,13 @@
     <div class="section-toolbar">
       <h2>📂 コンテンツ一覧（各サブページ・Excel資料へアクセス）</h2>
       <div class="filter-pills" id="category-filters">
-        <button type="button" class="filter-btn active" data-cat="ALL">すべて表示 (5)</button>
+        <button type="button" class="filter-btn active" data-cat="ALL">すべて表示 (8)</button>
         <button type="button" class="filter-btn" data-cat="AP">AP 買掛・前払 (2)</button>
         <button type="button" class="filter-btn" data-cat="AR">AR 売掛 (1)</button>
         <button type="button" class="filter-btn" data-cat="SLA_FAH">SLA・FAH (2)</button>
+        <button type="button" class="filter-btn" data-cat="DENSAI">電子記録債務・債権 (1)</button>
+        <button type="button" class="filter-btn" data-cat="FA">FA 固定資産 (1)</button>
+        <button type="button" class="filter-btn" data-cat="LA">LA リース会計 (1)</button>
       </div>
     </div>
 
@@ -422,6 +475,7 @@
         <div class="card-top">
           <div class="card-badges">
             <span class="mod-badge bg-ap">AP 買掛管理（標準）</span>
+            <span class="card-meta-tag">全63テーブル</span>
           </div>
           <h3>1. AP請求計上</h3>
           <p class="card-flow-sub">支払・取消(Void)・分割支払 → SLA → GL転記</p>
@@ -447,6 +501,7 @@
         <div class="card-top">
           <div class="card-badges">
             <span class="mod-badge bg-ap-pre">AP 買掛管理（前払金）</span>
+            <span class="card-meta-tag">全65テーブル</span>
           </div>
           <h3>2. AP前払請求(PREPAY)</h3>
           <p class="card-flow-sub">作成 → 支払 → 標準請求充当 → SLA → GL転記</p>
@@ -472,6 +527,7 @@
         <div class="card-top">
           <div class="card-badges">
             <span class="mod-badge bg-ar">AR 売掛管理</span>
+            <span class="card-meta-tag">全42テーブル</span>
           </div>
           <h3>3. AR請求計上</h3>
           <p class="card-flow-sub">入金 → 消込 → SLA → GL転記</p>
@@ -497,6 +553,7 @@
         <div class="card-top">
           <div class="card-badges">
             <span class="mod-badge bg-sla">SLA・FAH 統合フロー</span>
+            <span class="card-meta-tag">全59テーブル</span>
           </div>
           <h3>4. SLA・FAHセットアップ</h3>
           <p class="card-flow-sub">5大サブ元帳 → SLA仕訳作成 → GL転記 データフロー</p>
@@ -522,6 +579,7 @@
         <div class="card-top">
           <div class="card-badges">
             <span class="mod-badge bg-fah">SLA / FAH プレゼン資料</span>
+            <span class="card-meta-tag">全6章・11スライド</span>
           </div>
           <h3>5. SLA ＆ FAH 統合アーキテクチャ</h3>
           <p class="card-flow-sub">プレゼンテーション資料 (6章・11スライド)</p>
@@ -539,6 +597,100 @@
         <div class="card-actions">
           <a href="./FAH/index.html" class="btn-open">📽️ プレゼン資料を開く</a>
           <a href="./FAH/FusionERP_26D_SLA_FAH_Setup_SampleData.xlsx" download class="btn-dl">📥 Excel</a>
+        </div>
+      </article>
+
+      <!-- 6. 電子記録債務・電子記録債権（でんさい） -->
+      <article class="flow-card" data-category="DENSAI">
+        <div class="card-top">
+          <div class="card-badges">
+            <span class="mod-badge bg-densai">電子記録債務・債権</span>
+            <span class="card-meta-tag">全56テーブル</span>
+          </div>
+          <h3>6. 電子記録債務・電子記録債権（でんさい）</h3>
+          <p class="card-flow-sub">AP振出・満期決済 / AR受取・取立・満期入金 / 銀行割引＆裏書譲渡 → SLA → GL転記</p>
+        </div>
+        <div class="card-body">
+          <p class="card-desc">
+            Oracle Fusion Financials 26D の AP Bills Payable (<code>AP_CHECKS_ALL</code> / <code>AP_PAYMENT_HISTORY_ALL</code>) と AR Bills Receivable (<code>RA_CUSTOMER_TRX_ALL</code> / <code>AR_TRANSACTION_HISTORY_ALL</code>) の全3ケースを切替再生し、消費税10%/8%・段階源泉(10.21%/20.42%)・SLA/GL転記残高ゼロ完結まで追跡します。
+          </p>
+          <ul class="highlights">
+            <li><strong>CASE 1 (AP):</strong> AP請求 → <code>BILLS_PAYABLE</code>振出(ISSUED) → 満期決済(CLEARED)</li>
+            <li><strong>CASE 2 (AR):</strong> AR請求＆源泉(-306,300円) → 受取 → 取立(REMITTED) → 満期入金</li>
+            <li><strong>CASE 3 (割引/譲渡):</strong> 分割受取 → 銀行割引(<code>FACTORED</code> 99万/損7.9千) ＆ 裏書譲渡(<code>ENDORSED</code>) → リスク消滅</li>
+          </ul>
+          <div class="case-shortcuts">
+            <a href="./DENSAI/index.html?case=AP_DENSAI" class="case-chip">CASE 1: AP債務</a>
+            <a href="./DENSAI/index.html?case=AR_DENSAI" class="case-chip">CASE 2: AR満期</a>
+            <a href="./DENSAI/index.html?case=AR_DISCOUNT" class="case-chip">CASE 3: 割引・譲渡</a>
+          </div>
+        </div>
+        <div class="card-actions">
+          <a href="./DENSAI/index.html" class="btn-open">🚀 フローチャートを開く</a>
+          <a href="./DENSAI/FusionERP_26D_DENSAI_DataFlow.xlsx" download class="btn-dl">📥 Excel</a>
+        </div>
+      </article>
+
+      <!-- 7. FA 固定資産管理 -->
+      <article class="flow-card" data-category="FA">
+        <div class="card-top">
+          <div class="card-badges">
+            <span class="mod-badge bg-fa">FA 固定資産管理</span>
+            <span class="card-meta-tag">全60テーブル</span>
+          </div>
+          <h3>7. 固定資産管理（FA）</h3>
+          <p class="card-flow-sub">AP連携(一括追加) → 資産登録・減価償却 / 修正・部門移動 / 廃止(除却・売却)・損益計算 → SLA → GL転記</p>
+        </div>
+        <div class="card-body">
+          <p class="card-desc">
+            Oracle Fusion Financials 26D の固定資産(<code>FA_MASS_ADDITIONS</code> / <code>FA_ADDITIONS_B</code> / <code>FA_BOOKS</code> / <code>FA_ADJUSTMENTS</code> / <code>FA_DEPRN_*</code> / <code>FA_RETIREMENTS</code>)と買掛管理(<code>AP</code>)の連携全3ケースを可視化します。
+          </p>
+          <ul class="highlights">
+            <li><strong>CASE 1 (登録・償却):</strong> AP設備請求・支払 → 一括追加マージ → <code>ADDITION</code>(150万) → 月次償却2.5万</li>
+            <li><strong>CASE 2 (修正・移動):</strong> AP増設(+24万) → <code>FA_BOOKS</code>履歴化 → 製造1課→2課<code>TRANSFER</code> → 月額3万</li>
+            <li><strong>CASE 3 (資産廃止):</strong> AP撤去費(5万) → <code>FULL RETIREMENT</code>(売却20万/NBV60万) → 損45万確定</li>
+          </ul>
+          <div class="case-shortcuts">
+            <a href="./FA/index.html?case=FA_AP_ADD_DEPRN" class="case-chip">CASE 1: 登録・償却</a>
+            <a href="./FA/index.html?case=FA_ADJUST_TRANSFER" class="case-chip">CASE 2: 修正・移動</a>
+            <a href="./FA/index.html?case=FA_RETIREMENT" class="case-chip">CASE 3: 資産廃止</a>
+          </div>
+        </div>
+        <div class="card-actions">
+          <a href="./FA/index.html" class="btn-open">🚀 フローチャートを開く</a>
+          <a href="./FA/FusionERP_26D_FA_DataFlow.xlsx" download class="btn-dl">📥 Excel</a>
+        </div>
+      </article>
+
+      <!-- 8. LA リース会計 -->
+      <article class="flow-card" data-category="LA">
+        <div class="card-top">
+          <div class="card-badges">
+            <span class="mod-badge bg-la">LA リース会計</span>
+            <span class="card-meta-tag">全63テーブル</span>
+          </div>
+          <h3>8. リース会計（LA）</h3>
+          <p class="card-flow-sub">業務入門ガイド ＋ 登録(PV計算)・修正・解約・償却/利息・AP支払 / AR転貸請求連携 → SLA → GL転記</p>
+        </div>
+        <div class="card-body">
+          <p class="card-desc">
+            Oracle Fusion Financials 26D のリース会計(<code>FLA_LEASES_ALL</code> / <code>FLA_LEASE_DETAILS</code> / <code>FLA_LIABILITY_SCHEDULES</code> / <code>FLA_ACCRUAL_SCHEDULES</code> / <code>FLA_ACCOUNTING_*</code>)とAP・AR・SLA・GL連携を業務解説付きで可視化します。
+          </p>
+          <ul class="highlights">
+            <li><strong>CASE 1 (登録・償却):</strong> PV 240万オンバランス → AP賃料支払(11.55万) → 償却10万・利息5千</li>
+            <li><strong>CASE 2 (契約修正):</strong> Ver2増床延長 → 負債再測定(+165万) → 改定AP(14.3万) → 償却118,750</li>
+            <li><strong>CASE 3・4 (解約/収益):</strong> 中途解約(損6万/残0) ＆ 転貸サブリース(<code>AR</code>請求22万→収益20万)</li>
+          </ul>
+          <div class="case-shortcuts">
+            <a href="./LA/index.html?case=LA_BOOK_AP_ACCRUAL" class="case-chip">CASE 1: 登録・償却</a>
+            <a href="./LA/index.html?case=LA_REVISION" class="case-chip">CASE 2: 契約修正</a>
+            <a href="./LA/index.html?case=LA_TERMINATION" class="case-chip">CASE 3: 中途解約</a>
+            <a href="./LA/index.html?case=LA_REVENUE_AR" class="case-chip">CASE 4: 収益AR</a>
+          </div>
+        </div>
+        <div class="card-actions">
+          <a href="./LA/index.html" class="btn-open">🚀 フローチャートを開く</a>
+          <a href="./LA/FusionERP_26D_LA_DataFlow.xlsx" download class="btn-dl">📥 Excel</a>
         </div>
       </article>
     </section>

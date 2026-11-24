@@ -8,11 +8,11 @@
   <style>
     .portal-subnav { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 7px 24px; background: #020617; color: #e2e8f0; border-bottom: 1px solid #334155; font-size: 12px; flex-wrap: wrap; }
     .psnav-pager { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-    .psnav-btn { display: inline-flex; align-items: center; gap: 5px; padding: 4px 11px; border-radius: 6px; background: #1e293b; color: #f8fafc; text-decoration: none; font-weight: 700; border: 1px solid #475569; transition: background 0.15s; }
+    .psnav-btn { display: inline-flex; align-items: center; gap: 5px; padding: 4px 11px; border-radius: 6px; background: #1e293b; color: #f8fafc; text-decoration: none; font-weight: 700; border: 1px solid #475569; white-space: nowrap; transition: background 0.15s; }
     .psnav-btn:hover { background: #2563eb; border-color: #3b82f6; }
     .psnav-home { background: #334155; }
-    .psnav-pos { color: #94a3b8; font-weight: 700; padding: 0 4px; }
-    .psnav-disabled { display: inline-flex; align-items: center; padding: 4px 11px; border-radius: 6px; background: #0f172a; color: #475569; border: 1px solid #1e293b; font-weight: 700; cursor: not-allowed; }
+    .psnav-pos { color: #94a3b8; font-weight: 700; padding: 0 4px; white-space: nowrap; }
+    .psnav-disabled { display: inline-flex; align-items: center; padding: 4px 11px; border-radius: 6px; background: #0f172a; color: #475569; border: 1px solid #1e293b; font-weight: 700; white-space: nowrap; cursor: not-allowed; }
   </style>
 </head>
 <body>
@@ -20,25 +20,24 @@
     <a href="../index.html" class="psnav-btn psnav-home">🏠 メインページへ戻る</a>
     <div class="psnav-pager">
       <a href="../AR/index.html" class="psnav-btn">◀ 前のページ：AR 売掛管理</a>
-      <span class="psnav-pos">4 / 5：SLA・FAH 統合フロー</span>
+      <span class="psnav-pos">4 / 8：SLA・FAH 統合フロー</span>
       <a href="../FAH/index.html" class="psnav-btn">次のページ：SLA / FAH プレゼン資料 ▶</a>
     </div>
   </nav>
   <!-- ヘッダー -->
   <header class="app-header">
     <div class="header-left">
-      <div class="oracle-badge">Oracle Fusion ERP Financials 26D</div>
-      <div>
-        <h1>SLA(補助元帳会計)・FAHセットアップ ＆ 5大サブ元帳→GL転記 データフロー</h1>
-        <p class="subtitle">AP・AR・FA・LA・FAH 取引から ユーザー定義算式・ADR・JLT・サポート参照(残高有/無)・JERS 経由の GL_BALANCES 確定まで（全59テーブル・68リレーション）</p>
-      </div>
+      <div class="brand-badge">Oracle Fusion ERP Financials 26D (OEDMF準拠・全59テーブル網羅)</div>
+      <h1>SLA(補助元帳会計)・FAHセットアップ ＆ 5大サブ元帳→GL転記 データフロー</h1>
+      <p class="header-sub">AFF 9セグメント体系（会社-部門-勘定科目-補助科目-税コード-管理コード-備考1-備考2-備考3）｜ AP・AR・FA・LA・FAH 取引から ユーザー定義算式・ADR・JLT・サポート参照(残高有/無)・JERS 経由の <code>GL_BALANCES</code> 確定まで（全59テーブル・68リレーション）</p>
     </div>
     <div class="header-actions">
       <button id="btn-setup-modal" class="btn btn-secondary" title="SLA・FAH 全9セットアップ画面とOEDMFテーブル対応を確認">⚙️ SLA/FAHセットアップ画面 (9工程)</button>
       <button id="btn-srdff-modal" class="btn btn-secondary" title="サポート参照(残高有/無)とDFFの設計・テーブル・集計違いを比較">⚖️ サポート参照 vs DFF比較</button>
-      <button id="btn-aff-modal" class="btn btn-secondary" title="AFF 9セグメント体系＆勘定一覧を確認">🗂️ AFF 9セグメント</button>
-      <button id="btn-er-modal" class="btn btn-secondary" title="OEDMF 26D 全テーブルリレーション一覧">🔗 ER一覧 (68件)</button>
-      <a href="./FusionERP_26D_SLA_Setup_and_Flow.xlsx" download class="btn btn-primary" title="プロセス×全テーブル・セットアップ＆取引データのExcelをダウンロード">📥 Excelデータ出力 (.xlsx)</a>
+      <button id="btn-aff-modal" class="btn btn-secondary" title="AFF 9セグメント体系＆勘定一覧を確認">🧾 AFF 9セグメント体系</button>
+      <button id="btn-er-modal" class="btn btn-secondary" title="OEDMF 26D 全テーブルリレーション一覧">🔗 ER結合関係一覧</button>
+      <a href="./FusionERP_26D_SLA_Setup_and_Flow.xlsx" download class="btn btn-excel" title="プロセス×全テーブル・セットアップ＆取引データのExcelをダウンロード">📊 Excelダウンロード (.xlsx)</a>
+      <a href="https://docs.oracle.com/en/cloud/saas/financials/26d/oedmf/index.html" target="_blank" rel="noopener noreferrer" class="btn btn-outline">📖 26D OEDMF公式 ↗</a>
     </div>
   </header>
 
